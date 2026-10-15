@@ -1,0 +1,51 @@
+{% extends "page.html" %}
+
+{% block body %}
+<div class="page-body">
+  <div class="wrap split">
+    {% if sent %}
+      <div class="sent" role="status">
+        <h2>Message sent</h2>
+        <p>Thanks for writing. I read every message and reply by email.</p>
+        <a class="link" href="{% url 'core:home' %}">Back to the homepage</a>
+      </div>
+    {% else %}
+      <form class="form" method="post" action="{% url 'contact:index' %}" novalidate data-form>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<p class="form-error" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+        <div class="row">
+          {% include "contact/_field.html" with field=form.name type="text" autocomplete="name" %}
+          {% include "contact/_field.html" with field=form.email type="email" autocomplete="email" %}
+        </div>
+        {% include "contact/_field.html" with field=form.subject type="text" autocomplete="off" optional=True %}
+        <div class="field{% if form.message.errors %} has-error{% endif %}">
+          <label for="{{ form.message.id_for_label }}">Message</label>
+          <textarea id="{{ form.message.id_for_label }}" name="{{ form.message.html_name }}" autocomplete="off" required
+            aria-describedby="{{ form.message.id_for_label }}-hint{% if form.message.errors %} {{ form.message.id_for_label }}-error{% endif %}"
+            {% if form.message.errors %}aria-invalid="true"{% endif %}>{{ form.message.value|default_if_none:'' }}</textarea>
+          <span class="hint" id="{{ form.message.id_for_label }}-hint">A few lines about what you have in mind is plenty.</span>
+          {% if form.message.errors %}<span class="error" id="{{ form.message.id_for_label }}-error">{{ form.message.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="visually-hidden" aria-hidden="true">
+          <label for="id_website">Leave this empty</label>
+          <input id="id_website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="form-foot">
+          <button class="btn btn-primary" type="submit">Send message</button>
+        </div>
+      </form>
+    {% endif %}
+    <aside class="sticky">
+      <div class="block">
+        <p class="aside-title">Direct</p>
+        <ul class="links">
+          {% if profile.email %}<li><a class="link" href="mailto:{{ profile.email }}">{{ profile.email }}</a></li>{% endif %}
+          {% for social in profile.social_links.all %}<li><a class="link" href="{{ social.url }}" rel="noopener">{{ social.label }} ↗</a></li>{% endfor %}
+          {% if not profile.email and not profile.social_links.exists %}<li class="hint">Add your email and links in admin.</li>{% endif %}
+        </ul>
+      </div>
+      {% if profile.availability %}<div class="block"><p class="status">{{ profile.availability }}</p></div>{% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

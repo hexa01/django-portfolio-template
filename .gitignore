@@ -1,0 +1,16 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+/media/
+/staticfiles/
+CLAUDE.md
+docs/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+.claude/
+skills-lock.json
+.playwright/
+# local content backups (loaddata projects / loaddata posts)
+*/fixtures/
+backups/

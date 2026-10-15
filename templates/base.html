@@ -1,0 +1,79 @@
+{% load static seo %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# page colour before any CSS arrives, so a slow load never flashes white #}
+  <style>html { background: {{ theme.dark.bg }}; color-scheme: dark; } html[data-theme="light"] { background: {{ theme.light.bg }}; color-scheme: light; }</style>
+  <title>{% block title %}{% if full_title %}{{ full_title }}{% elif meta_title %}{{ meta_title }} | {{ profile.name }}{% else %}{{ profile.name }}{% if profile.role %} | {{ profile.role }}{% endif %}{% endif %}{% endblock %}</title>
+  <meta name="description" content="{{ meta_description|default:profile.meta_description }}">
+  <link rel="canonical" href="{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
+  {% if not site_indexable %}<meta name="robots" content="noindex, nofollow">{% elif noindex %}<meta name="robots" content="noindex, follow">{% endif %}
+
+  <meta property="og:site_name" content="{{ profile.name }}">
+  <meta property="og:type" content="{{ og_type|default:'website' }}">
+  <meta property="og:title" content="{% firstof full_title meta_title profile.name %}">
+  <meta property="og:description" content="{{ meta_description|default:profile.meta_description }}">
+  <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  <meta property="og:image" content="{{ og_image|default:og_default }}">
+  {% if not og_image_custom %}<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">{% endif %}
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" type="application/rss+xml" title="{{ profile.name }} | Blog" href="{% url 'rss' %}">
+  {% for item in schema %}{{ item|jsonld }}{% endfor %}
+  {% block meta %}{% endblock %}
+
+  <meta name="theme-color" content="{{ theme.dark.bg }}">
+  {% if profile.logo %}<link rel="icon" href="{{ profile.logo.url }}" type="image/png">{% else %}<link rel="icon" href="{% url 'core:favicon' %}" type="image/svg+xml">{% endif %}
+  <link rel="preload" href="{% static 'fonts/ibm-plex-sans-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/ibm-plex-sans-latin-600-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/ibm-plex-sans-latin-500-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/ibm-plex-mono-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+  {% block extra_css %}{% endblock %}
+  <link rel="stylesheet" href="{% static theme_css %}">
+  <script>
+    (function () {
+      var root = document.documentElement;
+      root.classList.add('js');
+      function theme() {
+        try {
+          var saved = localStorage.getItem('theme');
+          if (saved === 'light' || saved === 'dark') root.dataset.theme = saved;
+        } catch (e) {}
+      }
+      function intro() {
+        // the homepage entry animation plays once per session, not on every return to the page
+        try {
+          if (!sessionStorage.getItem('intro-seen')) { root.classList.add('intro'); sessionStorage.setItem('intro-seen', '1'); }
+        } catch (e) {}
+      }
+      theme();
+      // a page loaded ahead of time (speculation rules) re-checks the theme and plays the intro once it's shown
+      if (document.prerendering) document.addEventListener('prerenderingchange', function () { theme(); intro(); }, { once: true });
+      else intro();
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  {% include "partials/_header.html" %}
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+  {% include "partials/_footer.html" %}
+  {% include "partials/_search.html" %}
+  <script src="{% static 'js/site.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
+  <script type="speculationrules">
+    {"prerender": [{"where": {"and": [
+      {"href_matches": "/*"},
+      {"not": {"href_matches": "/admin/*"}},
+      {"not": {"href_matches": "/media/*"}},
+      {"not": {"href_matches": "/search/*"}},
+      {"not": {"href_matches": "/static/*"}}
+    ]}, "eagerness": "moderate"}]}
+  </script>
+</body>
+</html>

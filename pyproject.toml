@@ -1,0 +1,27 @@
+[project]
+name = "portfolio"
+version = "0.1.0"
+description = "Sushan Poudel — personal portfolio and technical blog"
+authors = [
+    {name = "Sushan Poudel"}
+]
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "django (>=5.2,<6.0)",
+    "django-environ (>=0.14.0,<0.15.0)",
+    "psycopg[binary] (>=3.3.6,<4.0.0)",
+    "gunicorn (>=26.2.0,<27.0.0)",
+    "whitenoise (>=6.12.0,<7.0.0)",
+    "pillow (>=12.3.0,<13.0.0)",
+    "markdown (>=3.11,<4.0)",
+    "pygments (>=2.21.0,<3.0.0)",
+    "django-agent-content (>=0.1.2,<0.2.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

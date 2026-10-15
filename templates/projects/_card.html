@@ -1,0 +1,6 @@
+<a class="card" href="{{ project.get_absolute_url }}">
+  <span class="year">{{ project.year }}</span>
+  <{{ heading_tag|default:'h2' }}>{{ project.title }}</{{ heading_tag|default:'h2' }}>
+  <p>{{ project.summary }}</p>
+  {% if project.stack_list %}<ul class="tags" translate="no">{% for tech in project.stack_list %}<li>{{ tech }}</li>{% endfor %}</ul>{% endif %}
+</a>

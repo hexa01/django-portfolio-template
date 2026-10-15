@@ -1,0 +1,44 @@
+{% extends "page.html" %}
+
+{% block head_extra %}
+{% if profile.resume_pdf %}<div class="actions-row"><a class="btn" href="{{ profile.resume_pdf.url }}" download>Download PDF ↓</a></div>{% endif %}
+{% endblock %}
+
+{% block body %}
+<div class="page-body">
+  <div class="wrap">
+    {% if experience %}
+    <section class="resume-section" aria-labelledby="experience">
+      <h2 id="experience">Experience</h2>
+      <div>
+        {% for job in experience %}
+          <div class="entry">
+            <div class="entry-head"><h3>{{ job.role }} <span class="org">at {{ job.organization }}</span></h3><span class="period">{{ job.period }}</span></div>
+            {% if job.point_list %}<ul>{% for point in job.point_list %}<li>{{ point }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    {% if skills %}
+    <section class="resume-section" aria-labelledby="skills">
+      <h2 id="skills">Skills</h2>
+      <dl class="skills">
+        {% for group in skills %}<div><dt>{{ group.name }}</dt><dd><ul class="tags" translate="no">{% for item in group.item_list %}<li>{{ item }}</li>{% endfor %}</ul></dd></div>{% endfor %}
+      </dl>
+    </section>
+    {% endif %}
+    {% if education %}
+    <section class="resume-section" aria-labelledby="education">
+      <h2 id="education">Education</h2>
+      <div>
+        {% for item in education %}
+          <div class="entry"><div class="entry-head"><h3>{{ item.title }} <span class="org">at {{ item.organization }}</span></h3><span class="period">{{ item.period }}</span></div></div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    {% if not experience and not skills and not education %}<p class="empty">The resume is being updated.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

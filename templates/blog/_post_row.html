@@ -1,0 +1,8 @@
+<li>
+  <time datetime="{{ post.published_at|date:'Y-m-d' }}">{{ post.published_at|date:'j M Y' }}</time>
+  <div>
+    <a href="{{ post.get_absolute_url }}"><{{ heading_tag|default:'h2' }}>{{ post.title }}</{{ heading_tag|default:'h2' }}></a>
+    <p>{{ post.excerpt }}</p>
+    {% if show_meta %}<p class="meta">{% if post.category %}<span>{{ post.category }}</span>{% endif %}<span>{{ post.reading_minutes }} min read</span></p>{% endif %}
+  </div>
+</li>

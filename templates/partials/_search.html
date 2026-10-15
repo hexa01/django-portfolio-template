@@ -1,0 +1,10 @@
+{# The header search panel (Ctrl/Cmd+K or /). Opened by site.js; without JS the search icon is a link to /search/. #}
+<dialog class="search-dialog" aria-label="Search">
+  <form class="search-bar" role="search" action="{% url 'core:search' %}" method="get">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+    <label class="visually-hidden" for="panel-search">Search projects and posts</label>
+    <input id="panel-search" type="search" name="q" placeholder="Search projects and posts" autocomplete="off" spellcheck="false">
+    <kbd>Esc</kbd>
+  </form>
+  <div class="search-results" data-url="{% url 'core:search' %}" aria-live="polite">{% include "core/_search_results.html" with query="" %}</div>
+</dialog>

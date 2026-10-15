@@ -1,0 +1,33 @@
+{% extends "page.html" %}
+
+{% block body %}
+<div class="page-body">
+  <div class="wrap split">
+    <div class="prose">
+      {% if profile.bio_html %}{{ profile.bio_html|safe }}{% else %}<p class="hint">Add your bio in admin (Site profile, About page).</p>{% endif %}
+      {% if profile.how_i_work_html %}<h2>How I work</h2>{{ profile.how_i_work_html|safe }}{% endif %}
+      {% if profile.now_html %}<h2>Now</h2>{{ profile.now_html|safe }}{% endif %}
+    </div>
+    <aside class="sticky">
+      <div class="block">
+        {% if profile.photo %}<img class="frame portrait" src="{{ profile.photo.url }}" alt="{{ profile.name }}" width="640" height="800">
+        {% else %}<div class="frame portrait" role="img" aria-label="Photo placeholder">{{ profile.initials }}</div>{% endif %}
+      </div>
+      <div class="block">
+        <dl class="facts">
+          {% if profile.role %}<div><dt>Role</dt><dd>{{ profile.role }}</dd></div>{% endif %}
+          {% if profile.location %}<div><dt>Based in</dt><dd>{{ profile.location }}</dd></div>{% endif %}
+          {% if profile.availability %}<div><dt>Status</dt><dd>{{ profile.availability }}</dd></div>{% endif %}
+        </dl>
+      </div>
+      <div class="block">
+        <ul class="links">
+          <li><a class="link" href="{% url 'core:resume' %}">Resume</a></li>
+          <li><a class="link" href="{% url 'projects:index' %}">Projects</a></li>
+          {% for social in profile.social_links.all %}<li><a class="link" href="{{ social.url }}" rel="noopener">{{ social.label }} ↗</a></li>{% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

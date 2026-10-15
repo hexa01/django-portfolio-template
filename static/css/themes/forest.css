@@ -1,0 +1,33 @@
+/* Forest: green-tinted neutrals, sage accent. Copy this file to make a new theme. */
+
+:root {
+  --bg: #0C100E;
+  --bg-2: #111613;
+  --surface: #161D19;
+  --border: #1F2823;
+  --border-strong: #2B3630;
+  --text: #E4E9E5;
+  --text-2: #95A39A;
+  --muted: #738279;
+  --accent: #8DBFA0;
+  --primary-hover: #FFFFFF;
+  --tok-string: #D4B97A;
+  --tok-number: #C3A6D6;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #F4F6F3;
+  --bg-2: #EAEEE8;
+  --surface: #E0E6DD;
+  --border: #D7DED4;
+  --border-strong: #BEC9BA;
+  --text: #151A17;
+  --text-2: #46524B;
+  --muted: #5F6B64;
+  --accent: #44755A;
+  --primary-hover: #000000;
+  --tok-string: #7A5A12;
+  --tok-number: #6E4A86;
+  color-scheme: light;
+}

@@ -1,0 +1,12 @@
+<section class="section cta" aria-labelledby="cta-heading">
+  <div class="wrap">
+    <div>
+      <h2 id="cta-heading">Have a system to build, or a role to talk about?</h2>
+      <p>Send a message about work, a project, or something I've written.</p>
+    </div>
+    <div class="cta-action">
+      <a class="btn btn-primary" href="{% url 'contact:index' %}">Get in touch</a>
+      {% if profile.availability %}<p class="status">{{ profile.availability }}</p>{% endif %}
+    </div>
+  </div>
+</section>

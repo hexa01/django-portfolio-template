@@ -1,0 +1,69 @@
+{% extends "page.html" %}
+
+{% block before_heading %}<a class="back" href="{% url 'projects:index' %}">All projects</a>{% endblock %}
+{% block heading %}{{ project.title }}{% endblock %}
+{% block lead %}<p class="lead">{{ project.summary }}</p>{% endblock %}
+
+{% block body %}
+<div class="page-body">
+  <div class="wrap split">
+    <article class="prose">
+      {% if project.problem_html %}<h2 id="problem">Problem</h2>{{ project.problem_html|safe }}{% endif %}
+      {% if project.approach_html %}<h2 id="approach">Approach</h2>{{ project.approach_html|safe }}{% endif %}
+      {% if project.diagram %}
+      <figure>
+        {% include "projects/_diagram.html" %}
+        {% if project.diagram_caption %}<figcaption>{{ project.diagram_caption }}</figcaption>{% endif %}
+      </figure>
+      {% endif %}
+      {% with decisions=project.decisions.all %}{% if decisions %}
+      <h2 id="decisions">Key decisions</h2>
+      <ol class="decisions">
+        {% for item in decisions %}
+          <li>
+            <h3>{{ item.decision }}</h3>
+            <dl>
+              <div><dt>Why</dt><dd>{{ item.why }}</dd></div>
+              <div><dt>Trade-off</dt><dd>{{ item.tradeoff }}</dd></div>
+            </dl>
+          </li>
+        {% endfor %}
+      </ol>
+      {% endif %}{% endwith %}
+      {% if project.result_html %}<h2 id="result">Result</h2>{{ project.result_html|safe }}{% endif %}
+    </article>
+    <aside class="sticky">
+      <dl class="facts">
+        <div><dt>Year</dt><dd>{{ project.year }}</dd></div>
+        {% if project.role %}<div><dt>Role</dt><dd>{{ project.role }}</dd></div>{% endif %}
+      </dl>
+      {% if project.stack_list %}
+      <div class="block">
+        <p class="aside-title">Stack</p>
+        <ul class="tags" translate="no">{% for tech in project.stack_list %}<li>{{ tech }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      {% if project.source_url or project.demo_url or project.availability_note %}
+      <div class="block">
+        <p class="aside-title">Links</p>
+        <ul class="links">
+          {% if project.source_url %}<li><a class="link" href="{{ project.source_url }}" rel="noopener" target="_blank">Source code ↗</a></li>{% endif %}
+          {% if project.demo_url %}<li><a class="link" href="{{ project.demo_url }}" rel="noopener" target="_blank">Live demo ↗</a></li>{% endif %}
+          {% if project.availability_note %}<li class="hint">{{ project.availability_note }}</li>{% endif %}
+        </ul>
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% if others %}
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>More projects</h2></div>
+    <ul class="cards">
+      {% for project in others %}<li>{% include "projects/_card.html" with heading_tag="h3" %}</li>{% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,119 @@
+/* Hero "systems" window. Everything is scoped under .hw. Hidden on phones. */
+
+.hw { position: relative; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden; }
+[data-theme="light"] .hw { box-shadow: 0 12px 32px -18px rgba(20, 23, 26, .25); }
+/* When stacked under the hero copy it's capped at the size it has on desktop, so tablets don't blow it up.
+   Portrait phones get portrait versions of the diagrams (see the end of this file). */
+@media (max-width: 1079px) { .hw { max-width: 38.75rem; } }
+/* Phones in landscape: short screens. Size the window from the height instead, so the diagram itself
+   (440:300) fits on screen below the sticky header: stage height <= 100svh - 5rem. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hw { max-width: min(38.75rem, calc((100svh - 5rem) * 440 / 300 + 5.4rem)); }
+}
+
+.hw-chrome { display: flex; align-items: center; gap: var(--s-2); padding: .6rem var(--s-2); border-bottom: 1px solid var(--border); background: var(--bg-2); }
+.hw-dots { display: flex; gap: 6px; }
+.hw-dots span { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); }
+.hw-address { flex: 1; min-width: 0; padding: .25rem .6rem; text-align: center; font: 400 .765rem var(--mono); color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hw-address b { font-weight: 400; color: var(--text-2); }
+.hw-pause { flex: none; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; color: var(--text-2); background: var(--bg); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; }
+.hw-pause:hover { color: var(--text); border-color: var(--border-strong); }
+.hw-pause svg { width: 10px; height: 10px; }
+.hw-pause .i-play { display: none; }
+.hw-pause[aria-pressed="true"] .i-play { display: block; }
+.hw-pause[aria-pressed="true"] .i-pause { display: none; }
+
+.hw-app { display: grid; grid-template-columns: 2.75rem 1fr; }
+
+/* slim side tab: icons only; the active one shows auto-switch progress */
+.hw-rail { display: flex; flex-direction: column; gap: 6px; padding: .6rem .35rem; background: var(--bg-2); border-right: 1px solid var(--border); }
+.hw-rail button { position: relative; overflow: hidden; display: grid; place-items: center; width: 2rem; height: 2rem; color: var(--muted); background: none; border: 0; border-radius: 5px; cursor: pointer; transition: background .15s var(--ease), color .15s var(--ease); }
+.hw-rail button:hover { background: var(--surface); color: var(--text); }
+.hw-rail button[aria-pressed="true"] { background: var(--surface); color: var(--accent); }
+.hw-rail svg { width: 15px; height: 15px; }
+.hw-rail button::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: 2px; height: 1.5px; border-radius: 1px; background: var(--accent); transform: scaleX(0); transform-origin: left; }
+.hw.running .hw-rail button[aria-pressed="true"]::after { animation: hw-progress var(--hw-cycle, 8s) linear forwards; }
+
+.hw-pane { min-width: 0; padding: 1.1rem 1.3125rem 1rem; }
+.hw-run { display: flex; gap: var(--s-2); min-height: 1.4em; margin-bottom: .4rem; font: 400 .765rem var(--mono); }
+.hw-run [data-hw-req] { color: var(--text-2); }
+.hw-run [data-hw-out] { color: var(--accent); }
+
+.hw-stage { position: relative; aspect-ratio: 440 / 300; border-radius: 6px; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.hw-stage:active { cursor: grabbing; }
+.hw-scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .3s var(--ease), visibility 0s linear .3s; }
+.hw-scene.on { opacity: 1; visibility: visible; transition: opacity .3s var(--ease); }
+.hw-scene svg { display: block; width: 100%; height: 100%; max-width: none; overflow: visible; }
+
+.hw svg text { font: 400 11.5px var(--mono); fill: var(--text-2); pointer-events: none; }
+.hw svg .note { font-size: 9.9px; fill: var(--muted); }
+.hw .node, .hw .part { fill: var(--bg-2); stroke: var(--border-strong); transition: stroke .35s var(--ease), fill .35s var(--ease); }
+.hw .part { fill: var(--bg); }
+.hw .node-hot { stroke: var(--accent); }
+.hw .edge { fill: none; stroke: var(--border-strong); transition: stroke .35s var(--ease); }
+.hw .edge-hot { stroke: var(--accent); }
+.hw .dash { stroke-dasharray: 3 4; }
+.hw .zone { fill: none; stroke: var(--border-strong); stroke-dasharray: 2 4; }
+.hw .lane { stroke: var(--border); stroke-dasharray: 2 4; }
+.hw .tick { stroke: var(--border-strong); }
+
+/* selectable components */
+.hw svg [data-info] { cursor: pointer; }
+.hw .node[data-info]:hover, .hw .part[data-info]:hover { stroke: var(--text-2); }
+.hw svg [data-info]:focus { outline: none; }
+.hw svg [data-info]:focus-visible { stroke: var(--accent); stroke-width: 2; }
+.hw svg .sel { stroke: var(--accent); stroke-width: 1.5; fill: color-mix(in srgb, var(--accent) 16%, var(--bg-2)); }
+
+/* trace */
+.hw svg .lit { stroke: var(--accent); }
+.hw .node.lit, .hw .part.lit { fill: color-mix(in srgb, var(--accent) 10%, var(--bg-2)); }
+.hw .packet { fill: var(--accent); }
+
+.hw-info { min-height: 3.4em; margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border); font-size: var(--t-sm); line-height: 1.55; color: var(--text-2); }
+.hw-info b { margin-right: var(--s-1); font: 400 .8125rem var(--mono); color: var(--accent); }
+.hw-info b:empty { display: none; }
+
+/* code view */
+.hw-code { position: absolute; inset: 6% 0; overflow: hidden; background: var(--bg-2); border: 1px solid var(--border); border-radius: 6px; }
+.hw-code-bar { display: flex; justify-content: space-between; padding: .45rem .8rem; border-bottom: 1px solid var(--border); font: 400 .75rem var(--mono); color: var(--muted); }
+.hw-code pre { margin: 0; padding: .7rem 0; overflow-x: auto; font: 400 .82rem/1.75 var(--mono); color: var(--text-2); }
+.hw-line { display: block; padding: 0 1rem; white-space: pre; transition: background .3s var(--ease), box-shadow .3s var(--ease), color .3s var(--ease); }
+.hw-line[data-info] { cursor: pointer; }
+.hw-line[data-info]:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.hw-line:focus { outline: none; }
+.hw-line:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+.hw-line.sel { color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+.hw-line.lit { color: var(--text); }
+.hw-line.current { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+.hw-code .k { color: var(--accent); }
+.hw-code .s { color: var(--tok-string); }
+.hw-code .n { color: var(--tok-number); }
+.hw-code .f { color: var(--text); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hw-scene.play .edge:not(.dash) { stroke-dasharray: 1; stroke-dashoffset: 1; animation: hw-draw .8s var(--ease) .05s forwards; }
+  .hw-scene.play .node, .hw-scene.play .part, .hw-scene.play text, .hw-scene.play .zone, .hw-scene.play .tick { opacity: 0; animation: hw-fade .35s var(--ease) forwards; }
+}
+@media (prefers-reduced-motion: reduce) { .hw-pause { display: none; } }
+
+/* without JS: first diagram as a still picture, no controls that would do nothing */
+html:not(.js) .hw-scene:first-child { opacity: 1; visibility: visible; }
+html:not(.js) .hw-rail, html:not(.js) .hw-pause, html:not(.js) .hw-run, html:not(.js) .hw-info { display: none; }
+html:not(.js) .hw-app { grid-template-columns: 1fr; }
+html:not(.js) .hw-stage { cursor: default; }
+
+@keyframes hw-draw { to { stroke-dashoffset: 0; } }
+@keyframes hw-fade { to { opacity: 1; } }
+@keyframes hw-progress { to { transform: scaleX(1); } }
+
+/* Portrait phones: the diagrams switch to portrait layouts drawn for this width, so labels stay at
+   full size (about 11.5px) instead of shrinking to ~7px. Same components, stories and notes. */
+.hw .d-tall { display: none; }
+@media (max-width: 519px) {
+  .hw .d-wide { display: none; }
+  .hw .d-tall { display: block; }
+  .hw-pane { padding: var(--s-2); }
+  .hw-stage { aspect-ratio: 280 / 300; }
+  .hw-code pre { font-size: .72rem; }
+  .hw-line { padding: 0 .75rem; }
+}

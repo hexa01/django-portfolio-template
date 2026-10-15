@@ -1,0 +1,15 @@
+.env
+.venv/
+.git/
+__pycache__/
+*.pyc
+media/
+staticfiles/
+CLAUDE.md
+docs/
+.claude/
+.playwright-cli/
+.gitignore
+.playwright/
+backups/
+deploy/

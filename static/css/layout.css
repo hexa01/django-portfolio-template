@@ -1,0 +1,100 @@
+/* Site header, navigation, footer. */
+
+.site-header { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); height: var(--header-h); }
+
+.brand { display: flex; align-items: center; gap: var(--s-2); font-weight: 600; font-size: var(--t-ui); letter-spacing: -0.01em; white-space: nowrap; }
+/* logo: initials on the accent colour, or an uploaded image fixed to the same box */
+.brand-mono { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 5px; background: var(--accent); color: var(--bg); font: 600 11px/1 var(--mono); letter-spacing: .02em; }
+.brand-logo { flex: none; width: 26px; height: 26px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border-strong); }
+
+.nav { margin-left: auto; margin-right: var(--s-2); }
+.nav ul { list-style: none; padding: 0; display: flex; gap: var(--s-4); font-size: var(--t-ui); color: var(--text-2); }
+.nav a { position: relative; transition: color .15s var(--ease); }
+.nav a:hover, .nav a[aria-current] { color: var(--text); }
+.nav-mark {
+  position: absolute; left: 0; right: 0;
+  bottom: calc((var(--header-h) - 1.6em) / -2); height: 1px; background: var(--accent);
+}
+
+.header-actions { display: flex; align-items: center; gap: var(--s-2); }
+
+/* header icon buttons: borderless, a quiet surface on hover */
+.theme-toggle, .menu-btn, .search-btn {
+  width: 2.25rem; height: 2.25rem; place-items: center;
+  color: var(--text-2); background: none; border: 0; border-radius: var(--radius); cursor: pointer;
+  transition: color .15s var(--ease), background .15s var(--ease);
+}
+.theme-toggle:hover, .menu-btn:hover, .search-btn:hover { color: var(--text); background: var(--surface); }
+.theme-toggle svg, .menu-btn svg, .search-btn svg { width: 18px; height: 18px; }
+
+.search-btn { display: grid; }
+
+/* theme toggle: needs JS, so hidden without it. The contrast icon turns half a revolution per theme. */
+.theme-toggle { display: none; }
+.js .theme-toggle { display: grid; }
+.theme-toggle svg { transition: transform .45s var(--ease); }
+[data-theme="light"] .theme-toggle svg { transform: rotate(180deg); }
+
+.menu-btn { display: none; }
+.menu-btn .icon-close, .menu-btn[aria-expanded="true"] .icon-open { display: none; }
+.menu-btn[aria-expanded="true"] .icon-close { display: block; }
+
+/* the full nav needs ~900px; below that it collapses behind the menu icon */
+@media (max-width: 899px) {
+  /* without JS the menu button stays hidden and the nav wraps below the brand */
+  .js .menu-btn { display: grid; }
+  .site-header .wrap { flex-wrap: wrap; height: auto; min-height: var(--header-h); }
+  .nav ul { flex-wrap: wrap; gap: var(--s-1) var(--s-3); padding-bottom: var(--s-2); }
+  .nav-mark { display: none; }
+  .nav a[aria-current] { color: var(--accent); }
+
+  .js .site-header .wrap { flex-wrap: nowrap; height: var(--header-h); }
+  .js .nav { display: none; position: absolute; top: var(--header-h); left: 0; right: 0; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .js .nav.open { display: block; }
+  .js .nav ul { flex-direction: column; gap: 0; padding: var(--s-1) 1rem var(--s-3); }
+  .js .nav li a { display: block; padding: var(--s-2) 0; border-bottom: 1px solid var(--border); }
+}
+
+.site-footer { padding: var(--s-4) 0 var(--s-5); font-size: var(--t-sm); color: var(--muted); }
+.site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2) var(--s-4); }
+.site-footer ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3); }
+.site-footer a { color: var(--text-2); transition: color .15s var(--ease); }
+.site-footer a:hover { color: var(--text); }
+
+
+/* search panel (Ctrl/Cmd+K): a native <dialog>, so focus and Esc are handled by the browser */
+.search-dialog {
+  width: min(36rem, calc(100% - 2 * var(--s-3))); max-height: min(32rem, calc(100dvh - 2 * var(--s-6)));
+  margin: var(--s-6) auto auto; padding: 0; overflow: hidden;
+  color: var(--text); background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: var(--radius);
+}
+.search-dialog[open] { display: flex; flex-direction: column; }
+.search-dialog::backdrop { background: color-mix(in srgb, var(--bg) 70%, transparent); }
+@media (max-width: 599px) { .search-dialog { margin-top: var(--s-3); max-height: calc(100dvh - 2 * var(--s-3)); } }
+.search-bar { display: flex; align-items: center; gap: var(--s-2); padding: 0 var(--s-3); border-bottom: 1px solid var(--border); }
+.search-bar svg { flex: none; width: 18px; height: 18px; color: var(--muted); }
+.search-bar input {
+  flex: 1; min-width: 0; padding: var(--s-2) 0; font: inherit; font-size: var(--t-ui); color: var(--text);
+  background: none; border: 0; outline: none;
+}
+.search-bar input::-webkit-search-cancel-button { display: none; }
+@media (hover: none) { .search-bar kbd { display: none; } }
+.search-bar kbd { padding: 1px 6px; font: 400 var(--t-xs)/1.6 var(--sans); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; }
+.search-dialog .search-results { overflow-y: auto; padding: var(--s-1) 0 var(--s-2); overscroll-behavior: contain; }
+.search-group { padding: var(--s-2) var(--s-3) 4px; font-size: var(--t-xs); font-weight: 600; color: var(--muted); }
+.search-list { list-style: none; padding: 0 var(--s-1); }
+.search-list a { display: grid; gap: 2px; padding: var(--s-1) var(--s-2); border-radius: 4px; }
+.search-list a:hover, .search-list a:focus-visible { background: var(--surface); outline: none; }
+.search-list a:focus-visible { box-shadow: inset 2px 0 0 var(--accent); }
+.search-title { font-size: var(--t-ui); font-weight: 500; color: var(--text); }
+.search-sub { font-size: var(--t-sm); color: var(--text-2); }
+.search-empty { padding: var(--s-3); font-size: var(--t-sm); color: var(--text-2); }
+.search-page { margin-top: var(--s-4); max-width: var(--read); }
+.search-page .search-list { padding: 0; }
+.search-page .search-list a { margin-inline: calc(-1 * var(--s-2)); }
+.search-page .search-group { padding-inline: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .search-dialog[open] { animation: search-in .15s var(--ease); }
+  @keyframes search-in { from { opacity: 0; transform: translateY(-6px); } }
+}

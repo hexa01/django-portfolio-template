@@ -1,0 +1,31 @@
+{# Shared by /search/ and the header search panel. #}
+{% if query|length >= 2 %}
+  {% if projects or posts %}
+    {% if projects %}
+    <h2 class="search-group">Projects</h2>
+    <ul class="search-list">
+      {% for project in projects %}
+      <li><a href="{{ project.get_absolute_url }}"><span class="search-title">{{ project.title }}</span><span class="search-sub">{{ project.summary|truncatechars:110 }}</span></a></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if posts %}
+    <h2 class="search-group">Posts</h2>
+    <ul class="search-list">
+      {% for post in posts %}
+      <li><a href="{{ post.get_absolute_url }}"><span class="search-title">{{ post.title }}</span><span class="search-sub">{{ post.published_at|date:'j M Y' }}</span></a></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  {% else %}
+    <p class="search-empty" role="status">No projects or posts match “{{ query }}”.</p>
+  {% endif %}
+{% else %}
+  <h2 class="search-group">Go to</h2>
+  <ul class="search-list">
+    <li><a href="{% url 'projects:index' %}"><span class="search-title">Projects</span></a></li>
+    <li><a href="{% url 'blog:index' %}"><span class="search-title">Blog</span></a></li>
+    <li><a href="{% url 'core:resume' %}"><span class="search-title">Resume</span></a></li>
+    <li><a href="{% url 'contact:index' %}"><span class="search-title">Contact</span></a></li>
+  </ul>
+{% endif %}

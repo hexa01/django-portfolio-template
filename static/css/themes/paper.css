@@ -1,0 +1,35 @@
+/* Ink & Paper: warm paper and ink, rust accent. Copy this file to make a new theme. */
+
+:root {
+  --bg: #141311;
+  --bg-2: #1A1916;
+  --surface: #22201C;
+  --border: #2A2823;
+  --border-strong: #39362F;
+  --text: #ECE8E0;
+  --text-2: #A39D91;
+  --muted: #837D72;
+  --accent: #E0875A;
+  --primary-hover: #FFFFFF;
+  --tok-string: #B9C08F;
+  --tok-number: #D6A6B8;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #F1EEE8;
+  --bg-2: #E9E5DD;
+  --surface: #E1DCD2;
+  --border: #D9D3C7;
+  --border-strong: #C3BBAC;
+  --text: #1C1B18;
+  --text-2: #4D4940;
+  --muted: #655F55;
+  --accent: #A3471E;
+  --primary-hover: #000000;
+  --tok-string: #55692B;
+  --tok-number: #8A3F63;
+  color-scheme: light;
+}
+
+.hero h1 em { font-style: italic; font-weight: 400; letter-spacing: -0.03em; color: var(--accent); }

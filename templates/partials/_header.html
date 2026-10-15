@@ -1,0 +1,24 @@
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{% url 'core:home' %}">{% if profile.logo %}<img class="brand-logo" src="{{ profile.logo.url }}" width="26" height="26" alt="">{% else %}<span class="brand-mono" aria-hidden="true">{{ profile.initials }}</span>{% endif %}{{ profile.name }}</a>
+    <nav class="nav" id="site-nav" aria-label="Primary">
+      <ul>
+        {% for item in nav_items %}
+          <li><a href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}{% if item.active %}<span class="nav-mark" aria-hidden="true"></span>{% endif %}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a class="search-btn" href="{% url 'core:search' %}" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      </a>
+      <button class="theme-toggle" type="button" aria-label="Switch to light theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu">
+        <svg class="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 8h16M4 16h16"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>

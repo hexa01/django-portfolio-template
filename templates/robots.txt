@@ -1,0 +1,8 @@
+{% if not site_indexable %}User-agent: *
+Disallow: /
+{% else %}User-agent: *
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: {{ request.scheme }}://{{ request.get_host }}{% url 'sitemap' %}
+{% endif %}

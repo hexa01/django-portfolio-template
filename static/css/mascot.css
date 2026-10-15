@@ -1,0 +1,19 @@
+/* 404 robot */
+.mascot { display: block; margin-bottom: var(--s-3); overflow: visible; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mascot * { fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mascot .mascot-shell, .mascot .mascot-letter { fill: var(--bg-2); }
+.mascot .mascot-screen { fill: var(--bg); stroke: var(--border-strong); }
+.mascot .mascot-pupil { fill: var(--text); stroke: none; }
+.mascot .mascot-tip { fill: var(--accent); stroke: none; }
+.mascot-eye, .mascot-antenna { transform-box: fill-box; }
+.mascot-eye { transform-origin: center; }
+.mascot-antenna { transform-origin: 50% 100%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .mascot-head { transition: transform .2s var(--ease); }
+  .mascot-pupil { transition: transform .12s var(--ease); }
+  .mascot-eye { transition: transform .07s ease-in; }
+  .mascot.blink .mascot-eye { transform: scaleY(.12); }
+  .mascot.poked .mascot-antenna { animation: mascot-wiggle .45s var(--ease); }
+}
+@keyframes mascot-wiggle { 25% { transform: rotate(-14deg); } 60% { transform: rotate(9deg); } }

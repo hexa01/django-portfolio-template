@@ -1,0 +1,26 @@
+{% extends "page.html" %}
+
+{% block body %}
+<div class="page-body">
+  <div class="wrap">
+    {% if featured %}
+      <a class="card feature{% if not featured.diagram %} no-media{% endif %}" href="{{ featured.get_absolute_url }}">
+        <div>
+          <span class="year">{{ featured.year }}</span>
+          <h2>{{ featured.title }}</h2>
+          <p>{{ featured.summary }}</p>
+          {% if featured.stack_list %}<ul class="tags" translate="no">{% for tech in featured.stack_list %}<li>{{ tech }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% if featured.diagram %}{% include "projects/_diagram.html" with project=featured %}{% endif %}
+      </a>
+      {% if projects %}
+        <ul class="cards{% if projects|length > 2 %} three{% endif %}">
+          {% for project in projects %}<li>{% include "projects/_card.html" %}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% else %}
+      <p class="empty">Projects are being written up. Check back soon, or <a class="link" href="{% url 'contact:index' %}">get in touch</a>.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

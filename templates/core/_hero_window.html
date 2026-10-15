@@ -1,0 +1,156 @@
+{# Hero "systems" window: example architectures with request traces. Behaviour in static/js/hero-window.js. #}
+<div class="hw" data-hw translate="no">
+  <div class="hw-chrome">
+    <div class="hw-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="hw-address" aria-hidden="true">systems / <b data-hw-address>rest-api</b></div>
+    <button class="hw-pause" type="button" aria-pressed="false" aria-label="Pause animation">
+      <svg class="i-pause" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><rect x="1.5" y="1" width="2.5" height="8"/><rect x="6" y="1" width="2.5" height="8"/></svg>
+      <svg class="i-play" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="M2 1 9 5 2 9z"/></svg>
+    </button>
+  </div>
+
+  <div class="hw-app">
+    <div class="hw-rail" role="group" aria-label="Choose a diagram">
+      <button type="button" data-go="0" aria-label="REST API" title="REST API">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="1.5" y="6" width="4" height="4" rx="1"/><rect x="9" y="2" width="5.5" height="3.5" rx="1"/><rect x="9" y="10.5" width="5.5" height="3.5" rx="1"/><path d="M5.5 8H7.5V3.75H9M7.5 8V12.25H9"/></svg>
+      </button>
+      <button type="button" data-go="1" aria-label="RAG pipeline" title="RAG pipeline">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14.5 14.5M5 7h4M7 5v4"/></svg>
+      </button>
+      <button type="button" data-go="2" aria-label="Event stream" title="Event stream">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="3" rx=".75"/><rect x="1.5" y="6.5" width="13" height="3" rx=".75"/><rect x="1.5" y="10.5" width="13" height="3" rx=".75"/></svg>
+      </button>
+      <button type="button" data-go="3" aria-label="Code" title="Code">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4 2 8l3.5 4M10.5 4 14 8l-3.5 4"/></svg>
+      </button>
+    </div>
+
+    <div class="hw-pane">
+      <p class="hw-run" aria-hidden="true"><span data-hw-req></span><span data-hw-out></span></p>
+      <div class="hw-stage" tabindex="0" aria-label="Architecture diagrams. Swipe or use the arrow keys to switch; select a component for its design note.">
+
+        {# 1. REST API: cache check, miss to Postgres, respond, then async work #}
+        <div class="hw-scene" data-key="web" data-title="rest-api">
+          <svg class="d-wide" viewBox="0 0 440 300" aria-hidden="true">
+            <rect class="zone" x="96" y="112" width="96" height="76" rx="6"/><text class="note" x="104" y="204">autoscaled</text>
+            <path class="edge edge-hot" data-id="lb-api" d="M72 150 H104"/>
+            <path class="edge edge-hot" data-id="api-redis" d="M180 150 H208 V62 H236"/>
+            <path class="edge" data-id="api-pg" d="M180 150 H236"/>
+            <path class="edge" data-id="api-queue" d="M180 150 H208 V238 H236"/>
+            <path class="edge dash" data-id="pg-replica" d="M314 150 H350"/><text class="note" x="332" y="126" text-anchor="middle">async</text>
+            <path class="edge" data-id="queue-workers" d="M306 238 H340"/>
+
+            <rect class="node" data-id="lb" x="20" y="134" width="52" height="32" rx="3"
+              data-name="load balancer" data-info="Health-checks every replica and drains connections during deploys, so a rollout never drops in-flight requests."/><text x="46" text-anchor="middle" y="154">lb</text>
+            <rect class="node" x="110" y="128" width="76" height="32" rx="3"/><rect class="node" x="107" y="131" width="76" height="32" rx="3"/>
+            <rect class="node node-hot" data-id="api" x="104" y="134" width="76" height="32" rx="3"
+              data-name="api ×N" data-info="Holds no local state. Sessions live in Redis, so any replica can serve any request and scaling out is just adding instances."/><text x="142" text-anchor="middle" y="154">api ×N</text>
+            <rect class="node" data-id="redis" x="236" y="46" width="70" height="32" rx="3"
+              data-name="redis" data-info="Checked first. Cache-aside with short TTLs, and on a miss only one request refills the key, so a popular key expiring can't stampede Postgres."/><text x="271" text-anchor="middle" y="66">redis</text><text class="note" x="312" y="66">cache-aside</text>
+            <rect class="node" data-id="pg" x="236" y="134" width="78" height="32" rx="3"
+              data-name="postgres" data-info="The single source of truth. Writes, and reads that must see the user's own write, always go to the primary."/><text x="275" text-anchor="middle" y="154">postgres</text>
+            <rect class="node" data-id="replica" x="350" y="134" width="70" height="32" rx="3"
+              data-name="read replica" data-info="Copied asynchronously, so it can lag. It serves reads that can tolerate that, like listings and search, to keep load off the primary."/><text x="385" text-anchor="middle" y="154">replica</text>
+            <rect class="node" data-id="queue" x="236" y="222" width="70" height="32" rx="3"
+              data-name="queue" data-info="The response goes back first; anything slower than the request budget, like emails or exports, is queued instead of making the user wait."/><text x="271" text-anchor="middle" y="242">queue</text><text class="note" x="238" y="274">at-least-once</text>
+            <rect class="node" x="346" y="216" width="70" height="32" rx="3"/><rect class="node" x="343" y="219" width="70" height="32" rx="3"/>
+            <rect class="node" data-id="workers" x="340" y="222" width="70" height="32" rx="3"
+              data-name="workers" data-info="Delivery is at-least-once, so every job is idempotent: running it twice has the same effect as running it once."/><text x="375" text-anchor="middle" y="242">workers</text><text class="note" x="342" y="274">idempotent</text>
+          </svg>
+          <svg class="d-tall" viewBox="0 0 280 300" aria-hidden="true"><rect class="zone" x="92" y="54" width="100" height="54" rx="6"/><text class="note" x="198" y="86">autoscaled</text><path class="edge" data-id="lb-api" d="M140 40 V70"/><path class="edge" data-id="api-redis" d="M140 100 V124 H42 V148"/><path class="edge" data-id="api-pg" d="M140 100 V148"/><path class="edge" data-id="api-queue" d="M140 100 V124 H238 V148"/><path class="edge dash" data-id="pg-replica" d="M140 178 V226"/><text class="note" x="147" y="206">async</text><path class="edge" data-id="queue-workers" d="M238 178 V226"/><rect class="node" data-id="lb" x="110" y="10" width="60" height="30" rx="3" data-name="load balancer" data-info="Health-checks every replica and drains connections during deploys, so a rollout never drops in-flight requests."/><text x="140" text-anchor="middle" y="29">lb</text><rect class="node" x="108" y="64" width="76" height="30" rx="3"/><rect class="node" x="105" y="67" width="76" height="30" rx="3"/><rect class="node" data-id="api" x="102" y="70" width="76" height="30" rx="3" data-name="api ×N" data-info="Holds no local state. Sessions live in Redis, so any replica can serve any request and scaling out is just adding instances."/><text x="140" text-anchor="middle" y="89">api ×N</text><rect class="node" data-id="redis" x="8" y="148" width="68" height="30" rx="3" data-name="redis" data-info="Checked first. Cache-aside with short TTLs, and on a miss only one request refills the key, so a popular key expiring can't stampede Postgres."/><text x="42" text-anchor="middle" y="167">redis</text><text class="note" x="8" y="194">cache-aside</text><rect class="node" data-id="pg" x="101" y="148" width="78" height="30" rx="3" data-name="postgres" data-info="The single source of truth. Writes, and reads that must see the user's own write, always go to the primary."/><text x="140" text-anchor="middle" y="167">postgres</text><rect class="node" data-id="replica" x="105" y="226" width="70" height="30" rx="3" data-name="read replica" data-info="Copied asynchronously, so it can lag. It serves reads that can tolerate that, like listings and search, to keep load off the primary."/><text x="140" text-anchor="middle" y="245">replica</text><rect class="node" data-id="queue" x="204" y="148" width="68" height="30" rx="3" data-name="queue" data-info="The response goes back first; anything slower than the request budget, like emails or exports, is queued instead of making the user wait."/><text x="238" text-anchor="middle" y="167">queue</text><rect class="node" x="210" y="220" width="68" height="30" rx="3"/><rect class="node" x="207" y="223" width="68" height="30" rx="3"/><rect class="node" data-id="workers" x="204" y="226" width="68" height="30" rx="3" data-name="workers" data-info="Delivery is at-least-once, so every job is idempotent: running it twice has the same effect as running it once."/><text x="238" text-anchor="middle" y="245">workers</text><text class="note" x="204" y="274">at-least-once</text><text class="note" x="204" y="288">idempotent</text></svg>
+        </div>
+
+        {# 2. RAG pipeline: offline ingest; online query with miss and hit paths #}
+        <div class="hw-scene" data-key="rag" data-title="rag-pipeline">
+          <svg class="d-wide" viewBox="0 0 440 300" aria-hidden="true">
+            <text class="note" x="20" y="34">ingest, offline</text>
+            <text class="note" x="20" y="172">query, online</text>
+            <path class="lane" d="M20 134 H426"/>
+
+            <path class="edge" data-id="docs-embed" d="M76 64 H110"/>
+            <path class="edge" data-id="embed-pg" d="M186 64 H228"/>
+            <path class="edge" data-id="retrieve-pg" d="M222 186 V150 H269 V80"/>
+            <path class="edge" data-id="user-cache" d="M76 202 H100"/>
+            <path class="edge" data-id="cache-retrieve" d="M160 202 H184"/>
+            <path class="edge" data-id="retrieve-rerank" d="M260 202 H280"/>
+            <path class="edge edge-hot" data-id="rerank-llm" d="M346 202 H368"/>
+            <path class="edge" data-id="response" d="M396 218 V256 H48 V218"/><text class="note" x="232" y="270">streamed response</text>
+            <path class="edge dash" data-id="hit" d="M130 218 V256 H48 V218"/><text class="note" x="136" y="244">hit</text>
+
+            <rect class="node" data-id="docs" x="20" y="48" width="56" height="32" rx="3"
+              data-name="documents" data-info="Re-ingested when they change, not on a schedule. A content hash skips anything that hasn't changed."/><text x="48" text-anchor="middle" y="68">docs</text>
+            <rect class="node" x="116" y="42" width="76" height="32" rx="3"/><rect class="node" x="113" y="45" width="76" height="32" rx="3"/>
+            <rect class="node" data-id="embed" x="110" y="48" width="76" height="32" rx="3"
+              data-name="embedding workers" data-info="Batched and rate-limited against the embedding API. Each vector stores its model version, so upgrading the model can re-embed safely."/><text x="148" text-anchor="middle" y="68">embed ×N</text>
+            <rect class="node" data-id="pgvector" x="228" y="48" width="82" height="32" rx="3"
+              data-name="pgvector" data-info="Vectors live next to the relational data, so tenant and permission filters apply in the same query. HNSW trades a little recall for much faster search."/><text x="269" text-anchor="middle" y="68">pgvector</text><text class="note" x="316" y="68">hnsw index</text>
+
+            <rect class="node" data-id="user" x="20" y="186" width="56" height="32" rx="3"
+              data-name="user" data-info="Gets the answer streamed token by token, so the first words arrive long before the full answer is finished."/><text x="48" text-anchor="middle" y="206">user</text>
+            <rect class="node" data-id="cache" x="100" y="186" width="60" height="32" rx="3"
+              data-name="answer cache" data-info="Keyed on the normalised question. A hit returns immediately and skips retrieval and the model entirely."/><text x="130" text-anchor="middle" y="206">cache</text>
+            <rect class="node" data-id="retrieve" x="184" y="186" width="76" height="32" rx="3"
+              data-name="hybrid retrieval" data-info="Queries pgvector and a keyword index together: keywords catch exact names and IDs that embeddings miss, vectors catch paraphrases."/><text x="222" text-anchor="middle" y="206">retrieve</text>
+            <rect class="node" data-id="rerank" x="280" y="186" width="66" height="32" rx="3"
+              data-name="reranker" data-info="Retrieve wide, around 20 chunks, then rerank down to about 5: recall first, then precision, and a smaller prompt."/><text x="313" text-anchor="middle" y="206">rerank</text>
+            <rect class="node node-hot" data-id="llm" x="368" y="186" width="56" height="32" rx="3"
+              data-name="llm" data-info="Answers only from the retrieved context, behind a timeout and a fallback. It's the slowest, least predictable step, so it runs last."/><text x="396" text-anchor="middle" y="206">llm</text>
+          </svg>
+          <svg class="d-tall" viewBox="0 0 280 300" aria-hidden="true"><text class="note" x="4" y="14">ingest, offline</text><text class="note" x="4" y="104">query, online</text><path class="lane" d="M4 86 H276"/><path class="edge" data-id="docs-embed" d="M56 39 H80"/><path class="edge" data-id="embed-pg" d="M152 39 H176"/><path class="edge" data-id="retrieve-pg" d="M216 118 V54"/><path class="edge" data-id="user-cache" d="M56 133 H80"/><path class="edge" data-id="cache-retrieve" d="M140 133 H164"/><path class="edge" data-id="retrieve-rerank" d="M202 148 V190"/><path class="edge" data-id="rerank-llm" d="M169 205 H146"/><path class="edge" data-id="response" d="M118 220 V252 H30 V148"/><text class="note" x="36" y="268">streamed response</text><path class="edge dash" data-id="hit" d="M110 148 V172 H30 V148"/><text class="note" x="116" y="166">hit</text><rect class="node" data-id="docs" x="4" y="24" width="52" height="30" rx="3" data-name="documents" data-info="Re-ingested when they change, not on a schedule. A content hash skips anything that hasn't changed."/><text x="30" text-anchor="middle" y="43">docs</text><rect class="node" x="86" y="18" width="72" height="30" rx="3"/><rect class="node" x="83" y="21" width="72" height="30" rx="3"/><rect class="node" data-id="embed" x="80" y="24" width="72" height="30" rx="3" data-name="embedding workers" data-info="Batched and rate-limited against the embedding API. Each vector stores its model version, so upgrading the model can re-embed safely."/><text x="116" text-anchor="middle" y="43">embed ×N</text><rect class="node" data-id="pgvector" x="176" y="24" width="80" height="30" rx="3" data-name="pgvector" data-info="Vectors live next to the relational data, so tenant and permission filters apply in the same query. HNSW trades a little recall for much faster search."/><text x="216" text-anchor="middle" y="43">pgvector</text><text class="note" x="176" y="70">hnsw index</text><rect class="node" data-id="user" x="4" y="118" width="52" height="30" rx="3" data-name="user" data-info="Gets the answer streamed token by token, so the first words arrive long before the full answer is finished."/><text x="30" text-anchor="middle" y="137">user</text><rect class="node" data-id="cache" x="80" y="118" width="60" height="30" rx="3" data-name="answer cache" data-info="Keyed on the normalised question. A hit returns immediately and skips retrieval and the model entirely."/><text x="110" text-anchor="middle" y="137">cache</text><rect class="node" data-id="retrieve" x="164" y="118" width="76" height="30" rx="3" data-name="hybrid retrieval" data-info="Queries pgvector and a keyword index together: keywords catch exact names and IDs that embeddings miss, vectors catch paraphrases."/><text x="202" text-anchor="middle" y="137">retrieve</text><rect class="node" data-id="rerank" x="169" y="190" width="66" height="30" rx="3" data-name="reranker" data-info="Retrieve wide, around 20 chunks, then rerank down to about 5: recall first, then precision, and a smaller prompt."/><text x="202" text-anchor="middle" y="209">rerank</text><rect class="node" data-id="llm" x="90" y="190" width="56" height="30" rx="3" data-name="llm" data-info="Answers only from the retrieved context, behind a timeout and a fallback. It's the slowest, least predictable step, so it runs last."/><text x="118" text-anchor="middle" y="209">llm</text></svg>
+        </div>
+
+        {# 3. Event stream: one event per partition; a failure goes to the DLQ and is retried #}
+        <div class="hw-scene" data-key="events" data-title="event-stream">
+          <svg class="d-wide" viewBox="0 0 440 300" aria-hidden="true">
+            <rect class="zone" x="246" y="98" width="96" height="120" rx="6"/><text class="note" x="250" y="92">consumer group</text>
+            <path class="edge" data-id="prod-topic" d="M96 150 H112"/>
+            <path class="edge" data-id="p0-c0" d="M214 121 H256"/>
+            <path class="edge edge-hot" data-id="p1-c1" d="M214 155 H256"/>
+            <path class="edge" data-id="p2-c2" d="M214 189 H256"/>
+            <path class="edge" data-id="c0-pg" d="M332 121 H348 V155 H364"/>
+            <path class="edge" data-id="c1-pg" d="M332 155 H364"/>
+            <path class="edge" data-id="c2-pg" d="M332 189 H348 V155 H364"/>
+            <path class="edge dash" data-id="group-dlq" d="M294 218 V244"/>
+            <path class="edge dash" data-id="retry" d="M256 257 H168 V214"/><text class="note" x="150" y="284">retry with backoff</text>
+
+            <rect class="node" x="26" y="128" width="76" height="32" rx="3"/><rect class="node" x="23" y="131" width="76" height="32" rx="3"/>
+            <rect class="node" data-id="producer" x="20" y="134" width="76" height="32" rx="3"
+              data-name="producer" data-info="Writes the event in the same transaction as the business change (the outbox pattern), so events are never lost or sent for changes that rolled back."/><text x="58" text-anchor="middle" y="154">producer</text>
+
+            <rect class="node" data-id="topic" x="112" y="86" width="112" height="128" rx="4"
+              data-name="orders topic" data-info="Keyed by order ID, so every event for one order lands in the same partition and stays in order."/><text class="note" x="120" y="102">orders topic</text>
+            <rect class="part" data-id="p0" x="122" y="110" width="92" height="22" rx="2"
+              data-name="partition" data-info="Order is guaranteed within a partition, not across them, so the partition key decides what stays in sequence."/><text class="note" x="128" y="125">p0</text>
+            <rect class="part" data-id="p1" x="122" y="144" width="92" height="22" rx="2"
+              data-name="partition" data-info="Order is guaranteed within a partition, not across them, so the partition key decides what stays in sequence."/><text class="note" x="128" y="159">p1</text>
+            <rect class="part" data-id="p2" x="122" y="178" width="92" height="22" rx="2"
+              data-name="partition" data-info="Order is guaranteed within a partition, not across them, so the partition key decides what stays in sequence."/><text class="note" x="128" y="193">p2</text>
+            <path class="tick" d="M150 114 v14 M160 114 v14 M170 114 v14 M180 114 v14 M150 148 v14 M160 148 v14 M170 148 v14 M180 148 v14 M190 148 v14 M150 182 v14 M160 182 v14"/>
+
+            <rect class="node" data-id="c0" x="256" y="110" width="76" height="22" rx="3"
+              data-name="consumer" data-info="One consumer per partition; scaling past that means adding partitions. Offsets are committed only after the write succeeds."/><text class="note" x="294" text-anchor="middle" y="125">consumer</text>
+            <rect class="node node-hot" data-id="c1" x="256" y="144" width="76" height="22" rx="3"
+              data-name="consumer" data-info="One consumer per partition; scaling past that means adding partitions. Offsets are committed only after the write succeeds."/><text class="note" x="294" text-anchor="middle" y="159">consumer</text>
+            <rect class="node" data-id="c2" x="256" y="178" width="76" height="22" rx="3"
+              data-name="consumer" data-info="One consumer per partition; scaling past that means adding partitions. Offsets are committed only after the write succeeds."/><text class="note" x="294" text-anchor="middle" y="193">consumer</text>
+            <rect class="node" data-id="pg" x="364" y="139" width="72" height="32" rx="3"
+              data-name="postgres" data-info="Writes are upserts keyed by event ID, so a redelivered or retried event changes nothing."/><text x="400" text-anchor="middle" y="159">postgres</text><text class="note" x="368" y="187">idempotent</text>
+            <rect class="node" data-id="dlq" x="256" y="244" width="76" height="26" rx="3"
+              data-name="dead-letter queue" data-info="A failing event is parked here and retried with backoff, so one bad message can't block the rest of its partition."/><text x="294" text-anchor="middle" y="261">dlq</text>
+          </svg>
+          <svg class="d-tall" viewBox="0 0 280 300" aria-hidden="true"><rect class="zone" x="152" y="72" width="88" height="96" rx="6"/><text class="note" x="154" y="66">consumer group</text><path class="edge" data-id="prod-topic" d="M140 38 V56"/><path class="edge" data-id="p0-c0" d="M120 90 H160"/><path class="edge" data-id="p1-c1" d="M120 120 H160"/><path class="edge" data-id="p2-c2" d="M120 150 H160"/><path class="edge" data-id="c0-pg" d="M232 90 H252 V215 H232"/><path class="edge" data-id="c1-pg" d="M232 120 H252 V215 H232"/><path class="edge" data-id="c2-pg" d="M232 150 H252 V215 H232"/><path class="edge dash" data-id="group-dlq" d="M196 168 V184 H78 V200"/><path class="edge dash" data-id="retry" d="M40 213 H24 V168"/><text class="note" x="4" y="250">retry with backoff</text><rect class="node" x="108" y="2" width="76" height="30" rx="3"/><rect class="node" x="105" y="5" width="76" height="30" rx="3"/><rect class="node" data-id="producer" x="102" y="8" width="76" height="30" rx="3" data-name="producer" data-info="Writes the event in the same transaction as the business change (the outbox pattern), so events are never lost or sent for changes that rolled back."/><text x="140" text-anchor="middle" y="27">producer</text><rect class="node" data-id="topic" x="8" y="56" width="128" height="112" rx="4" data-name="orders topic" data-info="Keyed by order ID, so every event for one order lands in the same partition and stays in order."/><text class="note" x="16" y="72">orders topic</text><rect class="part" data-id="p0" x="16" y="80" width="104" height="20" rx="2" data-name="partition" data-info="Order is guaranteed within a partition, not across them, so the partition key decides what stays in sequence."/><text class="note" x="22" y="94">p0</text><rect class="part" data-id="p1" x="16" y="110" width="104" height="20" rx="2" data-name="partition" data-info="Order is guaranteed within a partition, not across them, so the partition key decides what stays in sequence."/><text class="note" x="22" y="124">p1</text><rect class="part" data-id="p2" x="16" y="140" width="104" height="20" rx="2" data-name="partition" data-info="Order is guaranteed within a partition, not across them, so the partition key decides what stays in sequence."/><text class="note" x="22" y="154">p2</text><path class="tick" d="M44 84 v12 M54 84 v12 M64 84 v12 M74 84 v12 M44 114 v12 M54 114 v12 M64 114 v12 M74 114 v12 M84 114 v12 M44 144 v12 M54 144 v12"/><rect class="node" data-id="c0" x="160" y="80" width="72" height="20" rx="3" data-name="consumer" data-info="One consumer per partition; scaling past that means adding partitions. Offsets are committed only after the write succeeds."/><text class="note" x="196" text-anchor="middle" y="94">consumer</text><rect class="node" data-id="c1" x="160" y="110" width="72" height="20" rx="3" data-name="consumer" data-info="One consumer per partition; scaling past that means adding partitions. Offsets are committed only after the write succeeds."/><text class="note" x="196" text-anchor="middle" y="124">consumer</text><rect class="node" data-id="c2" x="160" y="140" width="72" height="20" rx="3" data-name="consumer" data-info="One consumer per partition; scaling past that means adding partitions. Offsets are committed only after the write succeeds."/><text class="note" x="196" text-anchor="middle" y="154">consumer</text><rect class="node" data-id="pg" x="160" y="200" width="72" height="30" rx="3" data-name="postgres" data-info="Writes are upserts keyed by event ID, so a redelivered or retried event changes nothing."/><text x="196" text-anchor="middle" y="219">postgres</text><text class="note" x="160" y="246">idempotent</text><rect class="node" data-id="dlq" x="40" y="200" width="76" height="26" rx="3" data-name="dead-letter queue" data-info="A failing event is parked here and retried with backoff, so one bad message can't block the rest of its partition."/><text x="78" text-anchor="middle" y="217">dlq</text></svg>
+        </div>
+
+        {# 4. Code: the RAG endpoint #}
+        <div class="hw-scene" data-key="code" data-title="rag_api.py">
+          <div class="hw-code" aria-hidden="true">
+            <div class="hw-code-bar"><span>rag_api.py</span><span>python</span></div>
+<pre><span class="hw-line" data-id="l0"><span class="k">@router</span>.post(<span class="s">"/ask"</span>)</span><span class="hw-line" data-id="l1"><span class="k">async def</span> <span class="f">ask</span>(q: Question, user: User) -> Answer:</span><span class="hw-line" data-id="l2" data-name="cache.get" data-info="Cheapest check first. A hit returns before any retrieval or model call.">    <span class="k">if</span> hit := <span class="k">await</span> cache.get(q.key):</span><span class="hw-line" data-id="l3" data-name="return hit" data-info="The fast path: no retrieval, no model call, no rate-limit slot used.">        <span class="k">return</span> hit</span><span class="hw-line" data-id="l4" data-name="limiter.slot" data-info="Limited per user, not globally, so one heavy user can't starve everyone else.">    <span class="k">async with</span> limiter.slot(user.id):</span><span class="hw-line" data-id="l5" data-name="retriever.hybrid" data-info="Keyword plus vector search, fetching wide on purpose; the reranker narrows it down.">        docs = <span class="k">await</span> retriever.hybrid(q.text, k=<span class="n">20</span>)</span><span class="hw-line" data-id="l6" data-name="reranker.top" data-info="Cuts 20 candidates to 5. Better precision and a smaller, cheaper prompt.">        docs = <span class="k">await</span> reranker.top(q.text, docs, n=<span class="n">5</span>)</span><span class="hw-line" data-id="l7" data-name="llm.generate" data-info="The expensive call sits inside the rate limit, so load on it stays bounded.">        out = <span class="k">await</span> llm.generate(q.text, docs)</span><span class="hw-line" data-id="l8" data-name="cache.set" data-info="Written only after a successful answer, so errors never get cached.">    <span class="k">await</span> cache.set(q.key, out, ttl=<span class="n">3600</span>)</span><span class="hw-line" data-id="l9">    <span class="k">return</span> out</span></pre>
+          </div>
+        </div>
+
+      </div>
+      <p class="hw-info" aria-live="polite"><b data-hw-info-name></b><span data-hw-info-text>Select any component to see the design decision behind it.</span></p>
+    </div>
+  </div>
+</div>

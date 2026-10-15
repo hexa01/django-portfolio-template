@@ -1,0 +1,23 @@
+{% load static %}<!doctype html>
+{# Rendered without context processors or a request: keep it standalone and free of database access. #}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Server error</title>
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/themes/forest.css' %}">
+</head>
+<body>
+  <main id="main">
+    <div class="page-head">
+      <div class="wrap">
+        <h1>Something went wrong</h1>
+        <p>The server hit an error while loading this page. Try again in a moment, or go to the <a class="link" href="/">homepage</a>.</p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

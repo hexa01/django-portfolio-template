@@ -1,0 +1,14 @@
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© {% now "Y" %} {{ profile.name }}</span>
+    {% with links=profile.social_links.all %}
+        <ul>
+          {% for link in links %}
+            <li><a href="{{ link.url }}" rel="me noopener" target="_blank">{{ link.label }}<span class="visually-hidden"> (opens in a new tab)</span></a></li>
+          {% endfor %}
+          {% if profile.email %}<li><a href="mailto:{{ profile.email }}">Email</a></li>{% endif %}
+          <li><a href="{% url 'rss' %}">RSS</a></li>
+        </ul>
+    {% endwith %}
+  </div>
+</footer>

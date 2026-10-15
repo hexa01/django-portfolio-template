@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+{# Shared layout for inner pages: header, body, contact band. #}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/pages.css' %}">{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div class="wrap">
+    {% block before_heading %}{% endblock %}
+    <h1>{% block heading %}{{ heading }}{% endblock %}</h1>
+    {% block lead %}{% if lead %}<p class="lead">{{ lead }}</p>{% endif %}{% endblock %}
+    {% block head_extra %}{% endblock %}
+  </div>
+</header>
+{% block body %}{% endblock %}
+{% if not hide_cta %}{% include "partials/_cta.html" %}{% endif %}
+{% endblock %}

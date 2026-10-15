@@ -1,0 +1,7 @@
+<div class="field{% if field.errors %} has-error{% endif %}">
+  <label for="{{ field.id_for_label }}">{{ field.label }}{% if optional %} <span class="hint">(optional)</span>{% endif %}</label>
+  <input id="{{ field.id_for_label }}" name="{{ field.html_name }}" type="{{ type }}" autocomplete="{{ autocomplete }}"
+    value="{{ field.value|default_if_none:'' }}"{% if field.field.required %} required{% endif %}{% if type == 'email' %} spellcheck="false"{% endif %}
+    {% if field.errors %}aria-invalid="true" aria-describedby="{{ field.id_for_label }}-error"{% endif %}>
+  {% if field.errors %}<span class="error" id="{{ field.id_for_label }}-error">{{ field.errors.0 }}</span>{% endif %}
+</div>

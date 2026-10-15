@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages.css' %}">
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/hero-window.css' %}">
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'js/hero-window.js' %}" defer></script>{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-name">
+  <div class="wrap">
+    <div class="hero-copy">
+      <h1 id="hero-name">{% with parts=profile.name_parts %}{{ parts.0 }}{% if parts.1 %} <em>{{ parts.1 }}</em>{% endif %}{% endwith %}</h1>
+      {% if profile.role %}<p class="role">{{ profile.role }}</p>{% endif %}
+      {% with phrases=profile.highlight_list %}{% if phrases %}
+      <p class="highlights">
+        <span class="visually-hidden">Focused on {{ phrases|join:", " }}</span>
+        <span aria-hidden="true">Focused on <span class="rotator" data-rotator>{% for phrase in phrases %}<span{% if forloop.first %} class="on"{% else %} hidden{% endif %}>{{ phrase }}</span>{% endfor %}</span></span>
+      </p>
+      {% endif %}{% endwith %}
+      {% if profile.tagline %}<p class="tagline">{{ profile.tagline }}</p>{% endif %}
+      <div class="actions">
+        <a class="btn btn-primary" href="{% url 'projects:index' %}">View projects</a>
+        <a class="btn" href="{% url 'core:resume' %}">Resume</a>
+      </div>
+    </div>
+
+    {% include "core/_hero_window.html" %}
+  </div>
+</section>
+
+<section class="section" aria-labelledby="work-heading">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="work-heading">Selected projects</h2>
+      <a class="link" href="{% url 'projects:index' %}">All projects</a>
+    </div>
+    <ul class="cards">
+      {% for project in projects %}<li>{% include "projects/_card.html" with heading_tag="h3" %}</li>{% endfor %}
+    </ul>
+  </div>
+</section>
+
+{% if focus_areas %}
+<section class="section" aria-labelledby="focus-heading">
+  <div class="wrap labelled">
+    <h2 id="focus-heading">What I work on</h2>
+    <ul class="focus">
+      {% for area in focus_areas %}
+        <li>
+          <h3>{{ area.title }}</h3>
+          {% if area.description %}<p>{{ area.description }}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{% if posts %}
+<section class="section" aria-labelledby="writing-heading">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="writing-heading">Latest writing</h2>
+      <a class="link" href="{% url 'blog:index' %}">All posts</a>
+    </div>
+    <ul class="posts">
+      {% for post in posts %}{% include "blog/_post_row.html" with heading_tag="h3" %}{% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{% include "partials/_cta.html" %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "page.html" %}
+
+{% block body %}
+<div class="page-body">
+  <div class="wrap">
+    <form class="search" role="search" action="{% url 'core:search' %}" method="get">
+      <label class="visually-hidden" for="site-search">Search projects and posts</label>
+      <input id="site-search" type="search" name="q" value="{{ query }}" placeholder="Search projects and posts" autocomplete="off" spellcheck="false">
+      <button class="btn" type="submit">Search</button>
+    </form>
+    <div class="search-results search-page">{% include "core/_search_results.html" %}</div>
+  </div>
+</div>
+{% endblock %}

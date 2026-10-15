@@ -1,0 +1,33 @@
+/* Graphite: neutral greys, amber accent. Copy this file to make a new theme. */
+
+:root {
+  --bg: #0B0D0F;
+  --bg-2: #101316;
+  --surface: #15191E;
+  --border: #20242A;
+  --border-strong: #2C3139;
+  --text: #E6E8EB;
+  --text-2: #9299A3;
+  --muted: #6F7680;
+  --accent: #D4A45A;
+  --primary-hover: #FFFFFF;
+  --tok-string: #B5C4A1;
+  --tok-number: #C8A8D8;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #F6F7F8;
+  --bg-2: #EEF0F2;
+  --surface: #E6E9EC;
+  --border: #DDE1E6;
+  --border-strong: #C5CCD4;
+  --text: #14171A;
+  --text-2: #4B525C;
+  --muted: #646B75;
+  --accent: #8F6118;
+  --primary-hover: #000000;
+  --tok-string: #4E6B2F;
+  --tok-number: #7A4B8F;
+  color-scheme: light;
+}

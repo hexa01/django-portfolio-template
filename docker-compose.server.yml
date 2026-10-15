@@ -1,0 +1,39 @@
+# Server: gunicorn, code baked into the image. Nginx on the host proxies to 127.0.0.1:${WEB_PORT}
+# and serves ./media directly. See deploy/README.md.
+#   docker compose -f docker-compose.server.yml up -d --build
+services:
+  web:
+    build: .
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"  # the host user that owns ./media
+    command: sh -c "python manage.py migrate --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout 30 --access-logfile -"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    volumes:
+      - ./media:/app/media
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8055}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen(u.Request('http://127.0.0.1:8000/health/', headers={'Host': 'localhost'}), timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

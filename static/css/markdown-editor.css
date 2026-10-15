@@ -1,0 +1,43 @@
+/* Admin only: the Markdown toolbar and preview. Uses Django admin's own colour variables, so it follows its light/dark mode. */
+
+.md-editor { flex: 1 1 auto; width: 100%; max-width: 50rem; min-width: 0; }
+.md-toolbar {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+  margin-bottom: 4px; padding: 4px;
+  background: var(--darkened-bg); border: 1px solid var(--border-color); border-radius: 4px;
+}
+.md-toolbar button {
+  padding: 4px 9px; font: inherit; font-size: 0.8125rem; line-height: 1.4; color: var(--body-fg);
+  background: var(--body-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer;
+}
+.md-toolbar button:hover { border-color: var(--body-quiet-color); }
+.md-toolbar button:focus-visible { outline: 2px solid var(--link-fg); outline-offset: 1px; }
+.md-toolbar.previewing > button { opacity: .45; cursor: default; }
+.md-tabs { display: flex; gap: 4px; margin-left: auto; }
+.md-tabs button[aria-pressed="true"] { color: var(--body-bg); background: var(--body-fg); border-color: var(--body-fg); }
+
+textarea[data-markdown] { width: 100%; box-sizing: border-box; font-family: ui-monospace, Menlo, monospace; font-size: 0.875rem; line-height: 1.6; }
+
+.md-preview {
+  box-sizing: border-box; padding: 12px 18px; overflow-x: auto;
+  font-size: 0.9375rem; line-height: 1.65; color: var(--body-fg);
+  background: var(--body-bg); border: 1px solid var(--border-color); border-radius: 4px;
+}
+.md-preview h2 { margin: 1.4em 0 .5em; padding: 0; font-size: 1.35rem; color: var(--body-fg); background: none; text-transform: none; letter-spacing: 0; }
+.md-preview h3 { margin: 1.2em 0 .4em; padding: 0; font-size: 1.1rem; color: var(--body-fg); background: none; text-transform: none; letter-spacing: 0; }
+.md-preview > :first-child { margin-top: 0; }
+.md-preview p, .md-preview li { font-size: inherit; line-height: inherit; }
+.md-preview ul, .md-preview ol { margin: 0 0 1em; padding-left: 1.4em; }
+.md-preview ul li { list-style: disc; }
+.md-preview ol li { list-style: decimal; }
+.md-preview blockquote { margin: 0 0 1em; padding-left: 12px; border-left: 2px solid var(--border-color); color: var(--body-quiet-color); }
+.md-preview img { max-width: 100%; height: auto; }
+.md-preview code { padding: .1em .3em; font-size: .875em; background: var(--darkened-bg); border-radius: 3px; }
+.md-preview .highlight { margin: 0 0 1em; overflow-x: auto; background: var(--darkened-bg); border: 1px solid var(--border-color); border-radius: 4px; }
+.md-preview .highlight pre { margin: 0; padding: 10px 12px; font-size: .8125rem; line-height: 1.6; }
+.md-preview .highlight code { padding: 0; background: none; }
+.md-preview .highlight .k, .md-preview .highlight .kd, .md-preview .highlight .kn, .md-preview .highlight .ow { color: var(--link-fg); }
+.md-preview .highlight .c, .md-preview .highlight .c1, .md-preview .highlight .cm { color: var(--body-quiet-color); font-style: italic; }
+.md-preview table { border-collapse: collapse; margin-bottom: 1em; }
+.md-preview th, .md-preview td { padding: 4px 8px; border: 1px solid var(--border-color); }
+.md-empty { color: var(--body-quiet-color); }

@@ -1,0 +1,52 @@
+{% extends "page.html" %}
+
+{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% if category %}?category={{ category.slug }}{% endif %}{% endblock %}
+
+{% block body %}
+<div class="page-body">
+  <div class="wrap">
+    <div class="blog-tools">
+      {% if categories %}
+      <nav aria-label="Categories">
+        <ul class="filters">
+          <li><a href="{% url 'blog:index' %}"{% if not filtered %} aria-current="page"{% endif %}>All</a></li>
+          {% for item in categories %}
+          <li><a href="?category={{ item.slug }}"{% if item == category %} aria-current="page"{% endif %}>{{ item.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+      <form class="search" role="search" action="{% url 'blog:index' %}" method="get">
+        <label class="visually-hidden" for="blog-search">Search posts</label>
+        <input id="blog-search" type="search" name="q" value="{{ query }}" placeholder="Search posts" autocomplete="off" spellcheck="false">
+        <button class="btn" type="submit">Search</button>
+      </form>
+    </div>
+
+    {% if query or tag %}
+    <p class="result-note" role="status">
+      {% with count=page.paginator.count %}{{ count }} post{{ count|pluralize }}
+      {% if query %}for “{{ query }}”{% endif %}{% if tag %} tagged {{ tag.name }}{% endif %}{% endwith %}.
+      <a class="link" href="{% url 'blog:index' %}">Show all posts</a>
+    </p>
+    {% endif %}
+
+    {% if posts %}
+    <ul class="posts posts-full">
+      {% for post in posts %}{% include "blog/_post_row.html" with show_meta=True %}{% endfor %}
+    </ul>
+    {% if page.has_other_pages %}
+    <nav class="pager" aria-label="Pages">
+      {% if page.has_previous %}<a class="link" href="?{% if category %}category={{ category.slug }}&amp;{% endif %}{% if tag %}tag={{ tag.slug }}&amp;{% endif %}{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ page.previous_page_number }}" rel="prev">Newer posts</a>{% else %}<span></span>{% endif %}
+      <span class="hint">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}<a class="link" href="?{% if category %}category={{ category.slug }}&amp;{% endif %}{% if tag %}tag={{ tag.slug }}&amp;{% endif %}{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ page.next_page_number }}" rel="next">Older posts</a>{% else %}<span></span>{% endif %}
+    </nav>
+    {% endif %}
+    {% elif filtered %}
+    <p class="empty">No posts match. Try other words, or <a class="link" href="{% url 'blog:index' %}">see all posts</a>.</p>
+    {% else %}
+    <p class="empty">Writing is on its way. In the meantime, see the <a class="link" href="{% url 'projects:index' %}">projects</a>.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

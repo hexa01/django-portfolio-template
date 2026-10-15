@@ -1,0 +1,7 @@
+{# An uploaded SVG is placed inline, so it follows the theme; a raster image is shown as is. #}
+{% if project.diagram_svg %}
+  <div class="diagram-frame" role="img" aria-label="Architecture of {{ project.title }}">{{ project.diagram_svg|safe }}</div>
+  <p class="diagram-hint">Swipe sideways to see the whole diagram.</p>
+{% elif project.diagram %}
+  <img class="frame" src="{{ project.diagram.url }}" alt="Architecture of {{ project.title }}" loading="lazy">
+{% endif %}
