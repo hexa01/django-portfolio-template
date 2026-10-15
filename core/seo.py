@@ -16,6 +16,11 @@ def person(request, profile):
         data['jobTitle'] = profile.role
     if profile.photo:
         data['image'] = _url(request, profile.photo.url)
+    if profile.location:
+        data['homeLocation'] = {'@type': 'Place', 'name': profile.location}
+    from .models import Experience  # the resume entry without an end year is the current job
+    if job := Experience.objects.filter(end_year__isnull=True).first():
+        data['worksFor'] = {'@type': 'Organization', 'name': job.organization}
     links = [link.url for link in profile.social_links.all()]
     if links:
         data['sameAs'] = links

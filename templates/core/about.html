@@ -4,18 +4,20 @@
 <div class="page-body">
   <div class="wrap split">
     <div class="prose">
-      {% if profile.bio_html %}{{ profile.bio_html|safe }}{% else %}<p class="hint">Add your bio in admin (Site profile, About page).</p>{% endif %}
+      {% if profile.bio_html %}{{ profile.bio_html|safe }}{% elif user.is_staff %}<p class="hint">Add your bio in admin (Site profile, About page).</p>{% endif %}
       {% if profile.how_i_work_html %}<h2>How I work</h2>{{ profile.how_i_work_html|safe }}{% endif %}
       {% if profile.now_html %}<h2>Now</h2>{{ profile.now_html|safe }}{% endif %}
     </div>
     <aside class="sticky">
+      {% if profile.photo %}
       <div class="block">
-        {% if profile.photo %}<img class="frame portrait" src="{{ profile.photo.url }}" alt="{{ profile.name }}" width="640" height="800">
-        {% else %}<div class="frame portrait" role="img" aria-label="Photo placeholder">{{ profile.initials }}</div>{% endif %}
+        <img class="frame portrait" src="{{ profile.photo.url }}" alt="Portrait of {{ profile.name }}" width="640" height="800">
       </div>
+      {% endif %}
       <div class="block">
         <dl class="facts">
-          {% if profile.role %}<div><dt>Role</dt><dd>{{ profile.role }}</dd></div>{% endif %}
+          {% if current_job %}<div><dt>Currently</dt><dd>{{ current_job.role }} at {{ current_job.organization }}</dd></div>
+          {% elif profile.role %}<div><dt>Role</dt><dd>{{ profile.role }}</dd></div>{% endif %}
           {% if profile.location %}<div><dt>Based in</dt><dd>{{ profile.location }}</dd></div>{% endif %}
           {% if profile.availability %}<div><dt>Status</dt><dd>{{ profile.availability }}</dd></div>{% endif %}
         </dl>

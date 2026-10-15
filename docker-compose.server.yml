@@ -1,5 +1,5 @@
 # Server: gunicorn, code baked into the image. Nginx on the host proxies to 127.0.0.1:${WEB_PORT}
-# and serves ./media directly. See deploy/README.md.
+# and serves ./media directly (template: deploy/nginx.conf).
 #   docker compose -f docker-compose.server.yml up -d --build
 services:
   web:

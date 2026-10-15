@@ -25,9 +25,15 @@ def index(request):
 
     page = Paginator(posts, PER_PAGE).get_page(request.GET.get('page'))
     title = f'Posts tagged {tag}' if tag else category.name if category else 'Blog'
-    text = PageText.context(PageText.Page.BLOG, SiteProfile.load())
+    profile = SiteProfile.load()
+    text = PageText.context(PageText.Page.BLOG, profile)
     if category or tag:
         text['full_title'] = ''  # filtered lists keep their own title ("Posts tagged …")
+    if category:
+        # category pages are indexable, so each gets its own description instead of the blog's
+        role = f', {profile.role}' if profile.role else ''
+        text['meta_description'] = (f'{category.name} articles by {profile.name}{role}, '
+                                    'with code and design decisions from real projects.')
     return render(request, 'blog/index.html', {
         'meta_title': title, 'heading': 'Blog', **text,
         'page': page, 'posts': page.object_list,

@@ -9,7 +9,7 @@ from django.views.generic import TemplateView
 from blog.models import Post
 from projects.models import Project
 
-from .models import Education, Experience, FocusArea, PageText, SiteProfile, SkillGroup
+from .models import Certification, Education, Experience, FocusArea, PageText, SiteProfile, SkillGroup
 from . import og, seo
 from .text import render_article
 from .theme import theme_colors
@@ -61,6 +61,8 @@ class AboutView(TemplateView):
         context = super().get_context_data(**kwargs)
         profile = SiteProfile.load()
         context.update(PageText.context(PageText.Page.ABOUT, profile))
+        # the resume entry without an end year is the current job
+        context['current_job'] = Experience.objects.filter(end_year__isnull=True).first()
         context['schema'] = [seo.person(self.request, profile)]
         return context
 
@@ -74,6 +76,7 @@ class ResumeView(TemplateView):
         context.update(PageText.context(PageText.Page.RESUME, SiteProfile.load()))
         context.update(
             experience=Experience.objects.all(), education=Education.objects.all(), skills=SkillGroup.objects.all(),
+            certifications=Certification.objects.all(),
         )
         return context
 

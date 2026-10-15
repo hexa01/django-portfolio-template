@@ -3,7 +3,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Education, Experience, FocusArea, PageText, SiteProfile, SkillGroup, SocialLink
+from .models import Certification, Education, Experience, FocusArea, PageText, SiteProfile, SkillGroup, SocialLink
 from .theme import theme_colors
 from .widgets import MarkdownAdminMixin
 
@@ -98,6 +98,12 @@ class ExperienceAdmin(admin.ModelAdmin):
 @admin.register(Education)
 class EducationAdmin(admin.ModelAdmin):
     list_display = ['title', 'organization', 'period', 'order']
+    list_editable = ['order']
+
+
+@admin.register(Certification)
+class CertificationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'issuer', 'year', 'valid_until', 'order']
     list_editable = ['order']
 
 

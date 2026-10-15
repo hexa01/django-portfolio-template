@@ -13,7 +13,7 @@
       <div>
         {% for job in experience %}
           <div class="entry">
-            <div class="entry-head"><h3>{{ job.role }} <span class="org">at {{ job.organization }}</span></h3><span class="period">{{ job.period }}</span></div>
+            <div class="entry-head"><h3>{{ job.role }} <span class="org">at {{ job.organization }}</span></h3><div class="entry-meta">{% if not job.end_year %}<span class="status">Current</span>{% endif %}<span class="period">{{ job.period }}</span></div></div>
             {% if job.point_list %}<ul>{% for point in job.point_list %}<li>{{ point }}</li>{% endfor %}</ul>{% endif %}
           </div>
         {% endfor %}
@@ -33,12 +33,28 @@
       <h2 id="education">Education</h2>
       <div>
         {% for item in education %}
-          <div class="entry"><div class="entry-head"><h3>{{ item.title }} <span class="org">at {{ item.organization }}</span></h3><span class="period">{{ item.period }}</span></div></div>
+          <div class="entry">
+            <div class="entry-head"><h3>{{ item.title }} <span class="org">at {{ item.organization }}</span></h3><span class="period">{{ item.period }}</span></div>
+            {% if item.details %}<p class="detail">{{ item.details }}</p>{% endif %}
+          </div>
         {% endfor %}
       </div>
     </section>
     {% endif %}
-    {% if not experience and not skills and not education %}<p class="empty">The resume is being updated.</p>{% endif %}
+    {% if certifications %}
+    <section class="resume-section" aria-labelledby="certifications">
+      <h2 id="certifications">Certifications</h2>
+      <div>
+        {% for cert in certifications %}
+          <div class="entry">
+            <div class="entry-head"><h3>{{ cert.name }} <span class="org">by {{ cert.issuer }}</span></h3><span class="period">{{ cert.year }}{% if cert.valid_until %}, {% if cert.expired %}expired {{ cert.valid_until }}{% else %}valid until {{ cert.valid_until }}{% endif %}{% endif %}</span></div>
+            {% if cert.url %}<p class="detail"><a class="link" href="{{ cert.url }}" rel="noopener" target="_blank">View credential ↗<span class="visually-hidden"> for {{ cert.name }}</span></a></p>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    {% if not experience and not skills and not education and not certifications %}<p class="empty">The resume is being updated.</p>{% endif %}
   </div>
 </div>
 {% endblock %}

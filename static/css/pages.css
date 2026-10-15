@@ -36,8 +36,9 @@
   background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
   font-size: var(--t-sm); color: var(--muted);
 }
-.frame.portrait { aspect-ratio: 1 / 1.25; font: 600 var(--t-h3)/1 var(--sans); color: var(--text-2); }
-@media (max-width: 1079px) { .frame.portrait { max-width: 13rem; } }
+/* the About photo supports the text rather than leading it: about 240 x 300 on desktop, smaller on phones */
+.frame.portrait { aspect-ratio: 1 / 1.25; max-width: 15rem; font: 600 var(--t-h3)/1 var(--sans); color: var(--text-2); }
+@media (max-width: 1079px) { .frame.portrait { max-width: 11rem; } }
 img.frame { display: block; width: 100%; height: auto; object-fit: contain; }
 figure figcaption { margin-top: var(--s-1); font-size: var(--t-sm); color: var(--muted); }
 
@@ -184,6 +185,8 @@ figure figcaption { margin-top: var(--s-1); font-size: var(--t-sm); color: var(-
 .entry h3 { font-size: var(--t-base); font-weight: 600; }
 .entry .org { color: var(--text-2); }
 .entry .period { font-size: var(--t-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
+.entry-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2); }
+.entry .detail { margin-top: .3rem; font-size: var(--t-sm); color: var(--text-2); }
 .entry ul { margin-top: var(--s-2); padding-left: 1.1em; color: var(--text-2); }
 .entry li + li { margin-top: .3rem; }
 .skills { display: grid; gap: var(--s-3); }

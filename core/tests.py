@@ -334,10 +334,33 @@ class AboutAndResumeTests(TestCase):
         Education.objects.create(title='A certificate', organization='Some school', start_year=2025, end_year=2025)
         response = self.client.get(reverse('core:resume'))
         self.assertContains(response, '2023 - present')
+        self.assertContains(response, '<span class="status">Current</span>', html=True)  # the job without an end year
         self.assertContains(response, '2018 - 2022')
         self.assertNotContains(response, '2025 - 2025')  # one year shows once
         self.assertContains(response, '<li>Cut p95 latency</li>', html=True)
         self.assertContains(response, '<li>Go</li>', html=True)
+        self.assertNotContains(response, 'id="certifications"')  # hidden while empty
+
+    def test_about_shows_the_current_job_and_no_photo_placeholder(self):
+        Experience.objects.create(role='Old role', organization='Past Co', start_year=2020, end_year=2022)
+        Experience.objects.create(role='AI Engineer', organization='Now Co', start_year=2026)
+        response = self.client.get(reverse('core:about'))
+        self.assertContains(response, '<dd>AI Engineer at Now Co</dd>', html=True)
+        self.assertNotContains(response, 'Past Co')
+        self.assertNotContains(response, 'frame portrait')  # no photo uploaded: no empty frame
+
+    def test_certifications_have_their_own_section_and_optional_link(self):
+        from .models import Certification
+        Certification.objects.create(name='Data Scientist Associate', issuer='DataCamp', year=2025, valid_until=2099)
+        Certification.objects.create(name='Agents Course', issuer='Hugging Face', year=2026, url='https://example.com/cert')
+        Certification.objects.create(name='Old cert', issuer='Somewhere', year=2018, valid_until=2020)
+        response = self.client.get(reverse('core:resume'))
+        self.assertContains(response, '<h2 id="certifications">Certifications</h2>', html=True)
+        self.assertContains(response, 'by DataCamp')
+        self.assertContains(response, 'href="https://example.com/cert"')
+        self.assertContains(response, 'View credential')
+        self.assertContains(response, '2025, valid until 2099')
+        self.assertContains(response, '2018, expired 2020')  # a lapsed credential never reads as current
 
     def test_pdf_button_only_with_a_pdf(self):
         self.assertNotContains(self.client.get(reverse('core:resume')), 'Download PDF')
@@ -488,6 +511,7 @@ class PageTextTests(TestCase):
         Category.objects.create(name='Guides', slug='guides')
         self.assertContains(self.client.get('/blog/'), '<title>The blog | Notes</title>', html=True)
         self.assertNotContains(self.client.get('/blog/?category=guides'), 'The blog | Notes')
+        self.assertTrue(self.description('/blog/?category=guides').startswith('Guides articles by'))  # its own description
 
     @override_settings(SITE_INDEXABLE=False)
     def test_hidden_site_is_noindex_everywhere(self):

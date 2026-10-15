@@ -1,7 +1,7 @@
 [project]
-name = "portfolio"
+name = "django-portfolio-template"
 version = "0.1.0"
-description = "Sushan Poudel — personal portfolio and technical blog"
+description = "Django portfolio and technical blog template for developers"
 authors = [
     {name = "Sushan Poudel"}
 ]

@@ -218,6 +218,7 @@ class Experience(models.Model):
 class Education(models.Model):
     title = models.CharField(max_length=150, help_text='e.g. "BSc Computer Science"')
     organization = models.CharField(max_length=150)
+    details = models.CharField(max_length=200, blank=True, help_text='Optional line below, e.g. "First class honours".')
     start_year = models.PositiveSmallIntegerField()
     end_year = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Leave empty for "present".')
     order = models.PositiveSmallIntegerField(default=0)
@@ -232,6 +233,28 @@ class Education(models.Model):
     @property
     def period(self):
         return year_range(self.start_year, self.end_year)
+
+
+class Certification(models.Model):
+    name = models.CharField(max_length=150, help_text='e.g. "Associate Data Scientist"')
+    issuer = models.CharField(max_length=150, help_text='e.g. "DataCamp"')
+    year = models.PositiveSmallIntegerField(help_text='Year it was issued.')
+    valid_until = models.PositiveSmallIntegerField(
+        null=True, blank=True, help_text='Year it expires. Leave empty if it never expires.',
+    )
+    url = models.URLField('credential link', blank=True, help_text='Optional: where the certificate can be verified.')
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', '-year']
+
+    def __str__(self):
+        return f'{self.name}, {self.issuer}'
+
+    @property
+    def expired(self):
+        from django.utils import timezone
+        return self.valid_until is not None and self.valid_until < timezone.now().year
 
 
 class SkillGroup(models.Model):
