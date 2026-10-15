@@ -9,6 +9,13 @@ LOGO_SIZE = (128, 128)   # shown at ~26px, so this stays sharp on high-density s
 PHOTO_SIZE = (640, 800)  # portrait 4:5, shown at up to ~430px wide
 
 
+def year_range(start, end):
+    """"2021 - 2025", "2024 - present", or just "2024" when it started and ended the same year."""
+    if end is None:
+        return f'{start} - present'
+    return str(start) if end == start else f'{start} - {end}'
+
+
 class SiteProfile(models.Model):
     """The site owner's identity. A single row, edited in admin."""
 
@@ -201,7 +208,7 @@ class Experience(models.Model):
 
     @property
     def period(self):
-        return f'{self.start_year} - {self.end_year or "present"}'
+        return year_range(self.start_year, self.end_year)
 
     @property
     def point_list(self):
@@ -224,7 +231,7 @@ class Education(models.Model):
 
     @property
     def period(self):
-        return f'{self.start_year} - {self.end_year or "present"}'
+        return year_range(self.start_year, self.end_year)
 
 
 class SkillGroup(models.Model):

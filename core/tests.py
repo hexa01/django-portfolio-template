@@ -331,8 +331,11 @@ class AboutAndResumeTests(TestCase):
         Experience.objects.create(role='Backend Engineer', organization='Acme Labs', start_year=2023, points='Owned the API\nCut p95 latency')
         Education.objects.create(title='BSc CS', organization='Some University', start_year=2018, end_year=2022)
         SkillGroup.objects.create(name='Languages', items='Python, Go')
+        Education.objects.create(title='A certificate', organization='Some school', start_year=2025, end_year=2025)
         response = self.client.get(reverse('core:resume'))
         self.assertContains(response, '2023 - present')
+        self.assertContains(response, '2018 - 2022')
+        self.assertNotContains(response, '2025 - 2025')  # one year shows once
         self.assertContains(response, '<li>Cut p95 latency</li>', html=True)
         self.assertContains(response, '<li>Go</li>', html=True)
 
