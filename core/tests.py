@@ -214,7 +214,7 @@ class LogoTests(TestCase):
 
     def test_initials_from_name(self):
         profile = SiteProfile.load()
-        for name, expected in [('Sushan Poudel', 'SP'), ('ada lovelace byron', 'AL'), ('Cher', 'C')]:
+        for name, expected in [('Grace Hopper', 'GH'), ('ada lovelace byron', 'AL'), ('Cher', 'C')]:
             profile.name = name
             self.assertEqual(profile.initials, expected)
 
