@@ -519,3 +519,115 @@ class PageTextTests(TestCase):
         robots = self.client.get('/robots.txt').content.decode()
         self.assertIn('Disallow: /\n', robots)
         self.assertNotIn('Sitemap:', robots)
+
+
+def jpeg_with_location(width, height):
+    """A JPEG carrying EXIF data (camera and GPS), like a phone photo."""
+    image = Image.new('RGB', (width, height), (30, 90, 160))
+    exif = Image.Exif()
+    exif[0x010F] = 'PhoneMaker'  # camera make
+    exif[0x8825] = {1: 'N', 2: (27.0, 42.0, 0.0)}  # GPS
+    buffer = BytesIO()
+    image.save(buffer, format='JPEG', exif=exif)
+    return SimpleUploadedFile('IMG_0042.jpg', buffer.getvalue(), content_type='image/jpeg')
+
+
+@PLAIN_STATIC
+@override_settings(AGENT_CONTENT_REQUIRE_HTTPS=False)
+class ImageLibraryTests(TestCase):
+    def setUp(self):
+        self.media = tempfile.mkdtemp()
+        override = override_settings(MEDIA_ROOT=self.media)
+        override.enable()
+        self.addCleanup(override.disable)
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+
+    def add(self, upload, alt='Token bucket refilling'):
+        from .models import Image as LibraryImage
+        image = LibraryImage(file=upload, alt=alt)
+        image.full_clean()
+        image.save()
+        return image
+
+    def test_photos_become_resized_webp_without_hidden_data(self):
+        image = self.add(jpeg_with_location(3200, 2000))
+        self.assertRegex(image.file.name, r'^library/\d{4}/\d{2}/token-bucket-refilling-[0-9a-f]{6}\.webp$')
+        self.assertEqual((image.width, image.height), (1600, 1000))
+        with Image.open(image.file.path) as stored:
+            self.assertEqual((stored.format, stored.size), ('WEBP', (1600, 1000)))
+            self.assertFalse(stored.getexif())  # camera and location data are gone
+
+    def test_svgs_are_cleaned_and_fake_images_refused(self):
+        image = self.add(SimpleUploadedFile('flow.svg', b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)'
+                                                        b'</script><rect width="4" height="4"/></svg>'))
+        self.assertTrue(image.file.name.endswith('.svg'))
+        self.assertNotIn(b'script', Path(image.file.path).read_bytes())
+        with self.assertRaises(ValidationError):
+            self.add(SimpleUploadedFile('photo.png', b'<?php echo "not an image"; ?>'))
+        with self.assertRaises(ValidationError):
+            self.add(SimpleUploadedFile('notes.txt', b'text'))
+
+    def test_deleting_an_image_removes_its_file(self):
+        image = self.add(png_upload(300, 200))
+        path = Path(image.file.path)
+        with self.captureOnCommitCallbacks(execute=True):
+            image.delete()
+        self.assertFalse(path.exists())
+
+    def test_huge_pixel_counts_are_refused(self):
+        with mock.patch('core.media.MAX_PIXELS', 100):
+            with self.assertRaises(ValidationError):
+                self.add(png_upload(20, 20))
+
+    def test_posts_show_library_images_lazily_with_their_size(self):
+        from blog.models import Post
+        image = self.add(png_upload(800, 500))
+        post = Post.objects.create(title='Buckets', slug='buckets', excerpt='x', body=f'Intro.\n\n{image.markdown}\n')
+        self.assertIn(f'<img alt="Token bucket refilling" decoding="async" height="500" loading="lazy" '
+                      f'src="{image.file.url}" width="800"', post.body_html)
+        self.assertEqual(image.usages()[0][0], 'Post: Buckets')
+
+    def test_admin_shows_markdown_and_warns_before_deleting_a_used_image(self):
+        from blog.models import Post
+        admin = get_user_model().objects.create_superuser('owner', 'o@example.com', 'pw')
+        self.client.force_login(admin)
+        image = self.add(png_upload(300, 200))
+        page = self.client.get(reverse('admin:core_image_change', args=[image.pk]))
+        self.assertContains(page, image.markdown)
+        Post.objects.create(title='Buckets', slug='buckets', excerpt='x', body=image.markdown)
+        page = self.client.get(reverse('admin:core_image_delete', args=[image.pk]), follow=True)
+        self.assertContains(page, 'still shown in: Post: Buckets')
+
+    def test_editor_picker_lists_and_searches_images_for_staff_only(self):
+        self.add(png_upload(300, 200), alt='Token bucket refilling')
+        self.add(png_upload(300, 200), alt='Kill switch flow')
+        url = reverse('markdown-images')
+        self.assertEqual(self.client.get(url).status_code, 302)  # to the admin login
+        self.client.force_login(get_user_model().objects.create_superuser('owner', 'o@example.com', 'pw'))
+        self.assertEqual(len(self.client.get(url).json()['images']), 2)
+        found = self.client.get(url, {'q': 'bucket'}).json()['images']
+        self.assertEqual([i['alt'] for i in found], ['Token bucket refilling'])
+        self.assertTrue(found[0]['markdown'].startswith('![Token bucket refilling](/media/library/'))
+
+    def test_agents_upload_to_the_library_and_post_covers(self):
+        import io
+        import json
+        from django.core.management import call_command
+        from blog.models import Post
+        out = io.StringIO()
+        call_command('agent_content_key', '--user', 'bot', stdout=out)
+        auth = {'HTTP_AUTHORIZATION': 'Bearer ' + next(l for l in out.getvalue().splitlines() if l.startswith('ac_'))}
+
+        response = self.client.post('/api/agent/images/', {'data': json.dumps({'alt': 'Rate limit layers'}),
+                                                           'file': png_upload(2000, 1000, 'layers.png')}, **auth)
+        self.assertEqual(response.status_code, 201)
+        body = response.json()
+        self.assertRegex(body['markdown'], r'^!\[Rate limit layers\]\(/media/library/.+\.webp\)$')
+        self.assertEqual((body['width'], body['height']), (1600, 800))
+
+        Post.objects.create(title='Buckets', slug='buckets', excerpt='x', body='x')
+        response = self.client.post('/api/agent/posts/buckets/cover/', {'file': png_upload(400, 300, 'cover.png')}, **auth)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Post.objects.get(slug='buckets').cover)
+        response = self.client.post('/api/agent/profile/resume_pdf/', {'file': png_upload(10, 10, 'cv.png')}, **auth)
+        self.assertIn('application/pdf', response.json()['fields']['resume_pdf'][0])

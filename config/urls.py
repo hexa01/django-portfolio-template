@@ -7,10 +7,11 @@ from django.views.generic import TemplateView
 
 from blog.feeds import PostFeed
 from core.sitemaps import SITEMAPS
-from core.views import markdown_preview
+from core.views import markdown_images, markdown_preview
 
 urlpatterns = [
     path('admin/markdown-preview/', markdown_preview, name='markdown-preview'),
+    path('admin/markdown-images/', markdown_images, name='markdown-images'),
     path('admin/', admin.site.urls),
     path('api/agent/', include('agent_content.urls')),
     path('projects/', include('projects.urls')),

@@ -39,14 +39,13 @@ bcrypt = ["bcrypt"]
 
 [[package]]
 name = "django-agent-content"
-version = "0.1.2"
-description = "Django app that lets AI agents and MCP clients (Claude Code, Cursor and others) edit your site's content safely: API keys, permissions, drafts, no deletes."
+version = "0.2.0"
+description = "Django app that lets AI agents and MCP clients (Claude Code, Cursor and others) edit your site's content safely: API keys, permissions, drafts, file and image uploads, no deletes."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "django_agent_content-0.1.2-py3-none-any.whl", hash = "sha256:3422d74f135a4d112384f9bc55832ff8c65c792f82f38c4dd41af147501fb875"},
-    {file = "django_agent_content-0.1.2.tar.gz", hash = "sha256:dd0b4bd6097015b4f1b3c9c2cfb946125204ee31ae117287c39579550905dde9"},
+    {file = "django_agent_content-0.2.0-py3-none-any.whl", hash = "sha256:43226f7939c91f57acc5b4d498b0cca73b9540ef1096e99ca9c817b2694edce3"},
 ]
 
 [package.dependencies]
@@ -387,4 +386,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "cbd2fd37774c773df4dcec5367f9554606f2cefb103ffe6e2feadaf207e9b325"
+content-hash = "00214e3d9a372d814efce82718e3448333db685cdaaef1938bd2891eb44349be"

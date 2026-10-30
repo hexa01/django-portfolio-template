@@ -1,9 +1,11 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 
-from .models import Certification, Education, Experience, FocusArea, PageText, SiteProfile, SkillGroup, SocialLink
+from .models import (
+    Certification, Education, Experience, FocusArea, Image, PageText, SiteProfile, SkillGroup, SocialLink,
+)
 from .theme import theme_colors
 from .widgets import MarkdownAdminMixin
 
@@ -111,3 +113,51 @@ class CertificationAdmin(admin.ModelAdmin):
 class SkillGroupAdmin(admin.ModelAdmin):
     list_display = ['name', 'items', 'order']
     list_editable = ['order']
+
+
+@admin.register(Image)
+class ImageAdmin(admin.ModelAdmin):
+    list_display = ['thumbnail', 'alt', 'dimensions', 'created_at']
+    list_display_links = ['thumbnail', 'alt']
+    search_fields = ['alt', 'file']
+    fields = ['file', 'alt', 'preview', 'markdown_line', 'used_in']
+    readonly_fields = ['preview', 'markdown_line', 'used_in']
+
+    @admin.display(description='')
+    def thumbnail(self, obj):
+        return format_html('<img src="{}" alt="" style="width:88px;height:56px;object-fit:cover;border-radius:4px">',
+                           obj.file.url)
+
+    @admin.display(description='Size')
+    def dimensions(self, obj):
+        return f'{obj.width} × {obj.height}' if obj.width else 'SVG'
+
+    @admin.display(description='Preview')
+    def preview(self, obj):
+        if not obj or not obj.file:
+            return 'Shown after saving.'
+        return format_html('<img src="{}" alt="" style="max-width:420px;max-height:280px;border-radius:6px">',
+                           obj.file.url)
+
+    @admin.display(description='Markdown')
+    def markdown_line(self, obj):
+        if not obj or not obj.file:
+            return 'Shown after saving.'
+        return format_html('<div><code style="user-select:all">{}</code></div>'
+                           '<div style="margin-top:4px;color:var(--body-quiet-color);font-size:.8125rem">'
+                           'Click once to select it, then paste it into a post or project text, or use the editor\'s '
+                           'Image button.</div>', obj.markdown)
+
+    @admin.display(description='Used in')
+    def used_in(self, obj):
+        usages = obj.usages() if obj and obj.pk else []
+        if not usages:
+            return 'Not used in any post, project or About text yet.'
+        return format_html_join(format_html('<br>'), '<a href="{}">{}</a>', ((url, label) for label, url in usages))
+
+    def delete_view(self, request, object_id, extra_context=None):
+        obj = self.get_object(request, object_id)
+        if obj and request.method == 'GET' and (usages := obj.usages()):
+            messages.warning(request, f'This image is still shown in: {", ".join(label for label, _ in usages)}. '
+                                      'Deleting it leaves a broken image there.')
+        return super().delete_view(request, object_id, extra_context)

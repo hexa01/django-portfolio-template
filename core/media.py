@@ -1,4 +1,5 @@
-"""Upload handling shared by the profile and projects: size checks, resizing, cleanup of replaced files."""
+"""Upload handling shared by the profile, projects and image library: size checks, resizing, cleanup of
+replaced files."""
 
 from io import BytesIO
 
@@ -7,6 +8,7 @@ from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+MAX_PIXELS = 40_000_000  # about 6300 × 6300, so a small file can't decompress into a giant image
 
 
 def validate_upload_size(file):
@@ -20,6 +22,37 @@ def validate_pdf(file):
     file.seek(0)
     if not file.name.lower().endswith('.pdf') or head != b'%PDF-':
         raise ValidationError('Upload a PDF file.')
+
+
+def validate_image(file):
+    """A real PNG, JPEG, WebP or GIF within the size and pixel limits."""
+    validate_upload_size(file)
+    try:
+        with Image.open(file) as image:
+            if image.format not in ('PNG', 'JPEG', 'WEBP', 'GIF'):
+                raise ValidationError('Upload a PNG, JPEG, WebP or GIF image.')
+            width, height = image.size
+            image.verify()
+    except ValidationError:
+        raise
+    except Exception:  # Pillow raises several error types for broken or disguised files
+        raise ValidationError('This file is not a readable image.')
+    finally:
+        file.seek(0)
+    if width * height > MAX_PIXELS:
+        raise ValidationError(f'The image is {width} × {height} pixels; the limit is about 40 million pixels.')
+
+
+def to_webp(upload, max_side):
+    """Re-encode as WebP, scaled down to fit max_side. Re-encoding keeps only the pixels, so camera and location
+    data and anything else hidden in the file are dropped. Returns (file, (width, height))."""
+    image = _open(upload)
+    transparent = 'A' in image.getbands() or 'transparency' in image.info
+    image = image.convert('RGBA' if transparent else 'RGB')
+    image.thumbnail((max_side, max_side), Image.LANCZOS)
+    buffer = BytesIO()
+    image.save(buffer, format='WEBP', quality=82, method=6)
+    return ContentFile(buffer.getvalue()), image.size
 
 
 def _open(upload):

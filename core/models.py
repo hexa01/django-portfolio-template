@@ -1,12 +1,21 @@
-from django.db import models
+import secrets
+
+from django.core.files.base import ContentFile
+from django.core.validators import FileExtensionValidator
+from django.db import models, transaction
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+from django.utils.text import slugify
 
 from .media import (
-    delete_replaced, fit_image, previous_files, validate_pdf, validate_upload_size,
+    delete_replaced, fit_image, previous_files, to_webp, validate_image, validate_pdf, validate_upload_size,
 )
+from .svg import clean_svg
 from .text import render_markdown
 
 LOGO_SIZE = (128, 128)   # shown at ~26px, so this stays sharp on high-density screens
 PHOTO_SIZE = (640, 800)  # portrait 4:5, shown at up to ~430px wide
+LIBRARY_SIDE = 1600      # library images fit in 1600 × 1600: sharp in the 688px article column on 2x screens
 
 
 def year_range(start, end):
@@ -271,3 +280,82 @@ class SkillGroup(models.Model):
     @property
     def item_list(self):
         return [item.strip() for item in self.items.split(',') if item.strip()]
+
+
+def validate_library_file(file):
+    if file.name.lower().endswith('.svg'):
+        clean_svg(file.read())
+        file.seek(0)
+    else:
+        validate_image(file)
+
+
+class Image(models.Model):
+    """An image for posts, projects and pages, placed in Markdown by its address."""
+
+    file = models.FileField(
+        upload_to='library/%Y/%m/',
+        validators=[FileExtensionValidator(['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg']), validate_library_file],
+        help_text='PNG, JPEG, WebP, GIF or SVG, up to 5 MB. Photos and screenshots are converted to WebP and scaled to '
+                  'fit 1600 × 1600 (animated GIFs keep their first frame); SVGs are cleaned and kept as SVG.',
+    )
+    alt = models.CharField(
+        'alt text', max_length=200,
+        help_text='What the image shows, for screen readers and search engines, e.g. "Token bucket refilling over time". '
+                  'Also used in the file name.',
+    )
+    width = models.PositiveIntegerField(null=True, editable=False)
+    height = models.PositiveIntegerField(null=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.alt
+
+    def save(self, *args, **kwargs):
+        previous = previous_files(Image, self.pk, ['file'])
+        if self.file and not self.file._committed:  # a new upload
+            # readable and unique: "token-bucket-refilling-3f9a1c.webp"
+            stem = f'{slugify(self.alt)[:60].strip("-") or "image"}-{secrets.token_hex(3)}'
+            if self.file.name.lower().endswith('.svg'):
+                self.width = self.height = None
+                self.file.save(f'{stem}.svg', ContentFile(clean_svg(self.file.read()).encode()), save=False)
+            else:
+                content, (self.width, self.height) = to_webp(self.file, LIBRARY_SIDE)
+                self.file.save(f'{stem}.webp', content, save=False)
+        super().save(*args, **kwargs)
+        delete_replaced(self, previous)
+
+    @property
+    def markdown(self):
+        alt = self.alt.replace('[', '(').replace(']', ')')
+        return f'![{alt}]({self.file.url})'
+
+    def usages(self):
+        """(label, admin URL) for every post, project or profile text that shows this image."""
+        from django.urls import reverse
+
+        from blog.models import Post
+        from projects.models import Project
+
+        url = self.file.url
+        found = []
+        for post in Post.objects.filter(body__contains=url).only('title'):
+            found.append((f'Post: {post.title}', reverse('admin:blog_post_change', args=[post.pk])))
+        text = models.Q(problem__contains=url) | models.Q(approach__contains=url) | models.Q(result__contains=url)
+        for project in Project.objects.filter(text).only('title'):
+            found.append((f'Project: {project.title}', reverse('admin:projects_project_change', args=[project.pk])))
+        about = models.Q(bio__contains=url) | models.Q(how_i_work__contains=url) | models.Q(now__contains=url)
+        if SiteProfile.objects.filter(about).exists():
+            found.append(('About page', reverse('admin:core_siteprofile_change', args=[1])))
+        return found
+
+
+@receiver(post_delete, sender=Image)
+def delete_image_file(sender, instance, **kwargs):
+    """A deleted library image takes its file with it (also for bulk deletes), once the deletion is committed."""
+    if instance.file:
+        name, storage = instance.file.name, instance.file.storage
+        transaction.on_commit(lambda: storage.delete(name))

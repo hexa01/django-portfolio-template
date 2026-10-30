@@ -3,7 +3,9 @@
 from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_datetime
 
-from agent_content import Action, Relation, Resource, register, slug_defaults
+from agent_content import Action, Relation, Resource, Upload, register, slug_defaults
+
+from core.media import MAX_UPLOAD_BYTES
 
 from .models import Category, Post, Tag
 
@@ -27,7 +29,7 @@ register(Resource(
                 'fences a language. Never invent results, numbers or claims; ask the owner when content is missing.',
     lookup='slug',
     fields=['title', 'slug', 'excerpt', 'body', 'category', 'tags', 'seo_title', 'seo_description',
-            'canonical_url', 'updated_at'],
+            'canonical_url', 'updated_at', 'cover_alt'],
     read_only=['status', 'published_at', 'reading_minutes'],
     computed={
         'url': lambda post: post.get_absolute_url(),
@@ -43,4 +45,5 @@ register(Resource(
     search=lambda posts, text: posts.search(text),
     actions={'publish': Action(publish, 'Make the post public. Only when the owner asks to publish it.',
                                {'published_at': 'ISO date to show on the post, e.g. when it was written; optional, default now'})},
+    uploads={'cover': Upload(accept=['image/'], max_bytes=MAX_UPLOAD_BYTES)},
 ))

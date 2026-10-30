@@ -10,7 +10,13 @@ class MarkdownWidget(forms.Textarea):
         js = ['js/markdown-editor.js']
 
     def __init__(self, attrs=None):
-        super().__init__({'data-markdown': '', 'data-preview-url': reverse_lazy('markdown-preview'), 'rows': 20, **(attrs or {})})
+        super().__init__({
+            'data-markdown': '', 'rows': 20,
+            'data-preview-url': reverse_lazy('markdown-preview'),
+            'data-images-url': reverse_lazy('markdown-images'),
+            'data-image-add-url': reverse_lazy('admin:core_image_add'),
+            **(attrs or {}),
+        })
 
 
 class MarkdownAdminMixin:

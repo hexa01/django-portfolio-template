@@ -1,5 +1,5 @@
 asgiref==3.12.1 ; python_version >= "3.12" and python_version < "4.0"
-django-agent-content==0.1.2 ; python_version >= "3.12" and python_version < "4.0"
+django-agent-content==0.2.0 ; python_version >= "3.12" and python_version < "4.0"
 django-environ==0.14.0 ; python_version >= "3.12" and python_version < "4.0"
 django==5.2.17 ; python_version >= "3.12" and python_version < "4.0"
 gunicorn==26.2.0 ; python_version >= "3.12" and python_version < "4.0"

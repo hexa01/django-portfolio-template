@@ -54,6 +54,18 @@ def article(request, post, profile, image):
     return {key: value for key, value in data.items() if value}
 
 
+def source_code(request, project, profile):
+    """For a project with public code: the case study and the repository describe the same software, by the owner."""
+    return {
+        '@context': 'https://schema.org', '@type': 'SoftwareSourceCode',
+        'name': project.title, 'description': project.summary,
+        'url': _url(request, project.get_absolute_url()),
+        'codeRepository': project.source_url,
+        'keywords': project.stack_list,
+        'author': {'@type': 'Person', 'name': profile.name, 'url': _url(request, reverse('core:home'))},
+    }
+
+
 def breadcrumbs(request, *trail):
     """trail: (name, path) pairs from the home page down to the current page."""
     return {

@@ -20,11 +20,14 @@ def index(request):
 
 def detail(request, slug):
     project = get_object_or_404(Project.objects.published(), slug=slug)
+    schema = [seo.breadcrumbs(request, ('Home', reverse('core:home')), ('Projects', reverse('projects:index')),
+                              (project.title, project.get_absolute_url()))]
+    if project.source_url:
+        schema.append(seo.source_code(request, project, SiteProfile.load()))
     return render(request, 'projects/detail.html', {
         'meta_title': project.title, 'meta_description': project.summary,
         'og_image': og.url(request, 'core:og-project', project.slug, project.title),
-        'schema': [seo.breadcrumbs(request, ('Home', reverse('core:home')), ('Projects', reverse('projects:index')),
-                                   (project.title, project.get_absolute_url()))],
+        'schema': schema,
         'project': project,
         'others': Project.objects.published().exclude(pk=project.pk)[:2],
     })

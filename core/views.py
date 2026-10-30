@@ -9,7 +9,7 @@ from django.views.generic import TemplateView
 from blog.models import Post
 from projects.models import Project
 
-from .models import Certification, Education, Experience, FocusArea, PageText, SiteProfile, SkillGroup
+from .models import Certification, Education, Experience, FocusArea, Image, PageText, SiteProfile, SkillGroup
 from . import og, seo
 from .text import render_article
 from .theme import theme_colors
@@ -105,6 +105,18 @@ def markdown_preview(request):
     """The admin editor's Preview tab: the same rendering the site uses, for staff only."""
     html, _, _ = render_article(request.POST.get('text', '')[:200_000])
     return HttpResponse(html)
+
+
+@staff_member_required
+@require_GET
+def markdown_images(request):
+    """The admin editor's image picker: the newest library images, optionally filtered by alt text."""
+    images = Image.objects.all()
+    if text := request.GET.get('q', '').strip():
+        images = images.filter(alt__icontains=text)
+    return JsonResponse({'images': [
+        {'alt': image.alt, 'url': image.file.url, 'markdown': image.markdown} for image in images[:60]
+    ]})
 
 
 def _card(title, kicker):

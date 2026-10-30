@@ -17,7 +17,9 @@ Built by [Sushan Poudel](https://sushanpoudel.com). Use it for your own site.
 - **Blog:** Markdown with syntax highlighting, an "On this page" list built from headings, categories, tags,
   full-text search (PostgreSQL), drafts and scheduled posts, an advisory editorial checklist, and cross-posting
   support (canonical link to the original, e.g. Medium).
-- **Admin as the CMS:** a Markdown toolbar with live preview, per-page SEO titles and descriptions, image resizing.
+- **Admin as the CMS:** a Markdown toolbar with live preview, per-page SEO titles and descriptions, and an image
+  library: uploads are converted to WebP, resized and stripped of camera and location data, then inserted into
+  posts and projects from the editor's image picker (lazy-loaded, with their size, so pages don't jump).
 - **Search:** Ctrl/Cmd+K site search across projects and posts.
 - **SEO:** sitemap, robots.txt, RSS (readable in browsers), structured data (Person, WebSite, BlogPosting,
   breadcrumbs), generated social preview cards, share links, and a switch to hide the site from search engines
@@ -25,7 +27,8 @@ Built by [Sushan Poudel](https://sushanpoudel.com). Use it for your own site.
 - **Design:** dark-first with a light theme, three colour themes in plain CSS, IBM Plex fonts (self-hosted),
   view transitions between pages, works without JavaScript, respects reduced motion.
 - **AI agents:** posts, projects, the profile and page texts are editable by Claude Code and other MCP clients,
-  with revocable keys, drafts by default and no deletes (see [AI agent editing](#ai-agent-editing)).
+  including image uploads, with revocable keys, drafts by default and no deletes
+  (see [AI agent editing](#ai-agent-editing)).
 
 ## Stack
 
@@ -94,7 +97,8 @@ docker compose -f docker-compose.server.yml exec web python manage.py createsupe
 Then install `deploy/nginx.conf` as a site (replace `example.com`, `/path/to/project` and the port), and add HTTPS
 with Certbot: the steps are at the top of that file. Updating later is `git pull` and the same `up -d --build`.
 
-Back up the database nightly with `deploy/backup.sh` (keeps 7 days):
+Back up the database and uploads nightly with `deploy/backup.sh` (keeps 7 days; copy `backups/` off the server
+now and then):
 
 ```
 15 3 * * * cd /path/to/project && ./deploy/backup.sh >> backups/backup.log 2>&1
@@ -119,8 +123,10 @@ claude mcp add agent-content \
   -- uvx agent-content-mcp
 ```
 
-The tools are generated from what this site registers; `/mcp` in Claude Code lists them. See the two packages'
-READMEs for more on how it works.
+The tools are generated from what this site registers; `/mcp` in Claude Code lists them. Agents can also upload
+images from your computer, given a file path: to the image library (to place in posts), as a post cover, a
+project diagram, or the profile's photo, logo and resume PDF. Uploads go through the same processing as in the
+admin. See the two packages' READMEs for more on how it works.
 
 ## Tests
 

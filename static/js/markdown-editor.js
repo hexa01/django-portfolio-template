@@ -12,11 +12,106 @@
     ['List', 'Bulleted list', function (ed) { ed.prefix('- '); }],
     ['Numbered', 'Numbered list', function (ed) { ed.prefix('1. ', true); }],
     ['Quote', 'Quote', function (ed) { ed.prefix('> '); }],
-    ['Image', 'Image: describe it, then paste its address', function (ed) { ed.wrap('![', '](https://)', 'what the image shows', 'https://'); }],
+    ['Image', 'Image: pick one from the library', function (ed) { pickImage(ed); }],
   ];
 
   function Editor(area) {
     this.area = area;
+  }
+
+  // the image picker: one native <dialog> per page, searching the library and inserting an image's Markdown
+  var picker;
+  function pickImage(ed) {
+    var area = ed.area;
+    if (!area.dataset.imagesUrl || !window.HTMLDialogElement) {
+      ed.wrap('![', '](https://)', 'what the image shows', 'https://');
+      return;
+    }
+    if (!picker) picker = buildPicker();
+    picker.editor = ed;
+    picker.addLink.href = area.dataset.imageAddUrl;
+    picker.url = area.dataset.imagesUrl;
+    picker.search.value = '';
+    picker.load('');
+    picker.dialog.showModal();
+    picker.search.focus();
+  }
+
+  function buildPicker() {
+    var p = {};
+    var dialog = p.dialog = document.createElement('dialog');
+    dialog.className = 'md-picker';
+    dialog.setAttribute('aria-labelledby', 'md-picker-title');
+    dialog.innerHTML =
+      '<div class="md-picker-head"><h2 id="md-picker-title">Insert an image</h2>' +
+      '<button type="button" class="md-picker-close" aria-label="Close">✕</button></div>' +
+      '<input type="search" class="md-picker-search" placeholder="Search by alt text" aria-label="Search images">' +
+      '<ul class="md-picker-grid" aria-live="polite"></ul>' +
+      '<div class="md-picker-foot"><a class="md-picker-add" target="_blank" rel="noopener">Upload a new image ↗</a>' +
+      '<button type="button" class="md-picker-manual">Insert by address instead</button></div>';
+    document.body.appendChild(dialog);
+    p.search = dialog.querySelector('.md-picker-search');
+    p.grid = dialog.querySelector('.md-picker-grid');
+    p.addLink = dialog.querySelector('.md-picker-add');
+
+    var timer, request;
+    p.load = function (text) {
+      if (request) request.abort();
+      request = new AbortController();
+      p.grid.innerHTML = '<li class="md-picker-note">Loading…</li>';
+      fetch(p.url + '?q=' + encodeURIComponent(text), { signal: request.signal, credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (data) { render(data.images); })
+        .catch(function (error) {
+          if (error.name !== 'AbortError') p.grid.innerHTML = '<li class="md-picker-note">The library could not be loaded.</li>';
+        });
+    };
+
+    function render(images) {
+      p.grid.textContent = '';
+      if (!images.length) {
+        p.grid.innerHTML = '<li class="md-picker-note">No images yet. Upload one with the link below, then search again.</li>';
+        return;
+      }
+      images.forEach(function (image) {
+        var li = document.createElement('li');
+        var button = document.createElement('button');
+        var img = document.createElement('img');
+        var label = document.createElement('span');
+        button.type = 'button';
+        img.src = image.url;
+        img.alt = '';
+        img.loading = 'lazy';
+        label.textContent = image.alt;
+        button.append(img, label);
+        button.addEventListener('click', function () { insert(image.markdown); });
+        li.appendChild(button);
+        p.grid.appendChild(li);
+      });
+    }
+
+    // on its own line, so Markdown renders it as a block image
+    function insert(markdown) {
+      var a = p.editor.area, s = a.selectionStart, e = a.selectionEnd;
+      var lead = s > 0 && a.value[s - 1] !== '\n' ? '\n\n' : '';
+      var out = lead + markdown + '\n';
+      dialog.close();
+      p.editor.replace(s, e, out, out.length, out.length);
+    }
+
+    p.search.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { p.load(p.search.value.trim()); }, 200);
+    });
+    dialog.querySelector('.md-picker-close').addEventListener('click', function () { dialog.close(); });
+    dialog.querySelector('.md-picker-manual').addEventListener('click', function () {
+      dialog.close();
+      p.editor.wrap('![', '](https://)', 'what the image shows', 'https://');
+    });
+    // a click on the backdrop closes it
+    dialog.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', function () { p.editor.area.focus(); });
+    return p;
   }
 
   // insertText keeps Ctrl+Z working; setRangeText is the fallback

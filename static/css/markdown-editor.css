@@ -41,3 +41,33 @@ textarea[data-markdown] { width: 100%; box-sizing: border-box; font-family: ui-m
 .md-preview table { border-collapse: collapse; margin-bottom: 1em; }
 .md-preview th, .md-preview td { padding: 4px 8px; border: 1px solid var(--border-color); }
 .md-empty { color: var(--body-quiet-color); }
+
+/* the image picker */
+.md-picker {
+  box-sizing: border-box; width: min(46rem, calc(100vw - 32px)); max-height: min(36rem, calc(100vh - 48px));
+  padding: 16px; color: var(--body-fg); background: var(--body-bg);
+  border: 1px solid var(--border-color); border-radius: 6px;
+}
+.md-picker[open] { display: flex; flex-direction: column; gap: 12px; }
+.md-picker::backdrop { background: rgb(0 0 0 / .45); }
+.md-picker-head { display: flex; align-items: center; justify-content: space-between; }
+.md-picker-head h2 { margin: 0; padding: 0; font-size: 1rem; color: var(--body-fg); background: none; text-transform: none; letter-spacing: 0; }
+.md-picker button { font: inherit; color: var(--body-fg); cursor: pointer; }
+.md-picker-close { padding: 2px 8px; background: none; border: 0; font-size: 1rem; }
+.md-picker-search { box-sizing: border-box; width: 100%; padding: 6px 10px; }
+.md-picker-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 10px;
+  margin: 0; padding: 0; overflow-y: auto; list-style: none;
+}
+.md-picker-grid li { margin: 0; padding: 0; list-style: none; }
+.md-picker-grid button {
+  display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 6px; text-align: left;
+  background: var(--darkened-bg); border: 1px solid var(--border-color); border-radius: 4px;
+}
+.md-picker-grid button:hover { border-color: var(--body-quiet-color); }
+.md-picker-grid button:focus-visible, .md-picker-close:focus-visible { outline: 2px solid var(--link-fg); outline-offset: 1px; }
+.md-picker-grid img { width: 100%; aspect-ratio: 1.618; object-fit: cover; border-radius: 3px; background: var(--body-bg); }
+.md-picker-grid span { overflow: hidden; font-size: .8125rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.md-picker-note { grid-column: 1 / -1; color: var(--body-quiet-color); }
+.md-picker-foot { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.md-picker-manual { padding: 4px 9px; background: var(--body-bg); border: 1px solid var(--border-color); border-radius: 4px; }

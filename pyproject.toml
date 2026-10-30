@@ -15,7 +15,7 @@ dependencies = [
     "pillow (>=12.3.0,<13.0.0)",
     "markdown (>=3.11,<4.0)",
     "pygments (>=2.21.0,<3.0.0)",
-    "django-agent-content (>=0.1.2,<0.2.0)"
+    "django-agent-content (>=0.2.0,<0.3.0)"
 ]
 
 [tool.poetry]

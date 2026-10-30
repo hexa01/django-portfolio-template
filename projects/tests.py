@@ -50,8 +50,12 @@ class ProjectTests(TestCase):
         response = self.client.get(private.get_absolute_url())
         self.assertContains(response, 'Code private (client work)')
         self.assertNotContains(response, 'Source code')
+        self.assertNotContains(response, 'SoftwareSourceCode')
         public = make('public-one', source_url='https://github.com/example/repo')
-        self.assertContains(self.client.get(public.get_absolute_url()), 'href="https://github.com/example/repo"')
+        response = self.client.get(public.get_absolute_url())
+        self.assertContains(response, 'href="https://github.com/example/repo"')
+        # structured data ties the case study to its repository
+        self.assertContains(response, '"codeRepository": "https://github.com/example/repo"')
 
     def test_home_shows_featured_projects_and_list_handles_empty(self):
         self.assertContains(self.client.get(reverse('projects:index')), 'Projects are being written up')
