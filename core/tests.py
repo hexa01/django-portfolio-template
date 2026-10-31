@@ -579,12 +579,20 @@ class ImageLibraryTests(TestCase):
             with self.assertRaises(ValidationError):
                 self.add(png_upload(20, 20))
 
-    def test_posts_show_library_images_lazily_with_their_size(self):
+    def test_post_images_have_their_size_and_only_the_first_loads_eagerly(self):
         from blog.models import Post
+        from .text import render_markdown
         image = self.add(png_upload(800, 500))
-        post = Post.objects.create(title='Buckets', slug='buckets', excerpt='x', body=f'Intro.\n\n{image.markdown}\n')
-        self.assertIn(f'<img alt="Token bucket refilling" decoding="async" height="500" loading="lazy" '
+        second = self.add(png_upload(400, 300), alt='Kill switch')
+        post = Post.objects.create(title='Buckets', slug='buckets', excerpt='x',
+                                   body=f'Intro.\n\n{image.markdown}\n\nMore.\n\n{second.markdown}\n')
+        # the first image is usually on screen at once, so it isn't lazy; later ones are
+        self.assertIn(f'<img alt="Token bucket refilling" decoding="async" height="500" '
                       f'src="{image.file.url}" width="800"', post.body_html)
+        self.assertIn(f'<img alt="Kill switch" decoding="async" height="300" loading="lazy" '
+                      f'src="{second.file.url}" width="400"', post.body_html)
+        # outside articles (project and About texts) every image stays lazy
+        self.assertIn('loading="lazy"', render_markdown(image.markdown))
         self.assertEqual(image.usages()[0][0], 'Post: Buckets')
 
     def test_admin_shows_markdown_and_warns_before_deleting_a_used_image(self):

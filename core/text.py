@@ -7,7 +7,13 @@ from markdown.treeprocessors import Treeprocessor
 
 
 class ImageAttributes(Treeprocessor):
-    """Images load lazily; library images get their width and height so the page doesn't jump as they load."""
+    """Images load lazily; library images get their width and height so the page doesn't jump as they load.
+    With eager_first, the first image loads right away: in an article it's usually on screen at once, and a lazy
+    first image makes the browser wait before fetching it."""
+
+    def __init__(self, md, eager_first=False):
+        super().__init__(md)
+        self.eager_first = eager_first
 
     def run(self, root):
         images = list(root.iter('img'))
@@ -19,8 +25,9 @@ class ImageAttributes(Treeprocessor):
         from .models import Image  # the models import this module
         library = Image.objects.filter(file__in={name(img) for img in images}, width__isnull=False)
         sizes = {image.file.name: (image.width, image.height) for image in library.only('file', 'width', 'height')}
-        for img in images:
-            img.set('loading', 'lazy')
+        for position, img in enumerate(images):
+            if position or not self.eager_first:
+                img.set('loading', 'lazy')
             img.set('decoding', 'async')
             if size := sizes.get(name(img)):
                 img.set('width', str(size[0]))
@@ -28,11 +35,17 @@ class ImageAttributes(Treeprocessor):
 
 
 class ImageExtension(Extension):
+    def __init__(self, eager_first=False):
+        super().__init__()
+        self.eager_first = eager_first
+
     def extendMarkdown(self, md):
-        md.treeprocessors.register(ImageAttributes(md), 'image_attributes', 5)
+        md.treeprocessors.register(ImageAttributes(md, self.eager_first), 'image_attributes', 5)
 
 
-EXTENSIONS = ['fenced_code', 'codehilite', 'tables', 'sane_lists', 'smarty', ImageExtension()]
+BASE_EXTENSIONS = ['fenced_code', 'codehilite', 'tables', 'sane_lists', 'smarty']
+EXTENSIONS = BASE_EXTENSIONS + [ImageExtension()]
+ARTICLE_EXTENSIONS = BASE_EXTENSIONS + [ImageExtension(eager_first=True), 'toc']
 # startinline: PHP snippets are highlighted without an opening <?php tag
 CONFIG = {'codehilite': {'css_class': 'highlight', 'guess_lang': False, 'startinline': True}}
 WORDS_PER_MINUTE = 220
@@ -50,7 +63,7 @@ def render_article(text):
     if not text:
         return '', [], 1
     md = markdown.Markdown(
-        extensions=EXTENSIONS + ['toc'],
+        extensions=ARTICLE_EXTENSIONS,
         extension_configs={**CONFIG, 'toc': {'toc_depth': '2-3', 'permalink': False}},
         output_format='html',
     )
