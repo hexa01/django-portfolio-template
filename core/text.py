@@ -1,4 +1,5 @@
 import math
+from html import unescape
 
 import markdown
 from django.conf import settings
@@ -70,7 +71,8 @@ def render_article(text):
     html = md.convert(text)
     toc = []
     for token in md.toc_tokens:  # nested h2 > h3
-        toc.append({'id': token['id'], 'name': token['name'], 'level': 2})
-        toc.extend({'id': child['id'], 'name': child['name'], 'level': 3} for child in token['children'])
+        # token names hold HTML entities (a smartened apostrophe is &rsquo;); the template escapes them again
+        toc.append({'id': token['id'], 'name': unescape(token['name']), 'level': 2})
+        toc.extend({'id': child['id'], 'name': unescape(child['name']), 'level': 3} for child in token['children'])
     minutes = max(1, math.ceil(len(text.split()) / WORDS_PER_MINUTE))
     return html, toc, minutes

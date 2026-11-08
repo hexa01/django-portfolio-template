@@ -567,6 +567,11 @@ class ImageLibraryTests(TestCase):
         with self.assertRaises(ValidationError):
             self.add(SimpleUploadedFile('notes.txt', b'text'))
 
+    def test_on_this_page_shows_apostrophes_as_text(self):
+        from .text import render_article
+        _, toc, _ = render_article("## Mistakes I'd avoid\n\nText.\n\n### What's next\n\nText.\n")
+        self.assertEqual([item['name'] for item in toc], ['Mistakes I’d avoid', 'What’s next'])
+
     def test_deleting_an_image_removes_its_file(self):
         image = self.add(png_upload(300, 200))
         path = Path(image.file.path)
