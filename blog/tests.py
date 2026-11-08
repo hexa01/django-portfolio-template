@@ -1,8 +1,16 @@
+import shutil
+import tempfile
 from datetime import timedelta
+from io import BytesIO
 
+from PIL import Image as PILImage
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+
+from core.models import Image as LibraryImage
 
 from .models import Category, Post, Tag
 
@@ -167,3 +175,59 @@ class AgentResourceTests(TestCase):
         status, body = self.send('patch', 'posts/live/', {'slug': 'moved'})
         self.assertEqual(status, 400)
         self.assertIn('slug', body['error'])
+
+
+@PLAIN_STATIC
+class MediumImportTests(TestCase):
+    """Medium's importer identifies as Embedly and drops highlighted code, WebP images and tables."""
+
+    EMBEDLY = {'HTTP_USER_AGENT': 'Mozilla/5.0 (compatible; Embedly/0.2; +http://support.embed.ly/)'}
+
+    def setUp(self):
+        self.media = tempfile.mkdtemp()
+        override = override_settings(MEDIA_ROOT=self.media)
+        override.enable()
+        self.addCleanup(override.disable)
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        buffer = BytesIO()
+        PILImage.new('RGB', (300, 200), (10, 20, 30)).save(buffer, format='PNG')
+        self.image = LibraryImage(file=SimpleUploadedFile('flow.png', buffer.getvalue()), alt='A flow')
+        self.image.save()
+
+    def post(self, **fields):
+        body = ('Intro.\n\n' + self.image.markdown + '\n\n```python\ndef get(key):\n    return key\n```\n\n'
+                '| Time | Tokens |\n|---|---|\n| 0 s | 20 |\n| 1 s | 5 |\n')
+        return Post.objects.create(**{'title': 'Buckets', 'slug': 'buckets', 'excerpt': 'About buckets.', 'body': body,
+                                      'status': Post.Status.PUBLISHED, 'published_at': timezone.now(), **fields})
+
+    def test_visitors_get_the_normal_page_and_the_importer_the_plain_one(self):
+        url = self.post().get_absolute_url()
+        normal = self.client.get(url)
+        self.assertContains(normal, 'class="highlight"')
+        self.assertContains(normal, '.webp')
+        self.assertIn('User-Agent', normal['Vary'])
+
+        plain = self.client.get(url, **self.EMBEDLY)
+        self.assertContains(plain, '<title>Buckets</title>', html=True)
+        self.assertContains(plain, '<pre><code>def get(key):')
+        self.assertNotContains(plain, 'highlight')
+        self.assertNotContains(plain, '.webp')
+        self.assertNotContains(plain, '<table')
+        self.assertContains(plain, '<li><strong>0 s</strong>: Tokens: 20.</li>', html=True)
+        self.assertContains(plain, f'rel="canonical" href="http://testserver{url}"')
+        self.assertContains(plain, reverse('blog:image-png', args=[self.image.pk]))
+
+    def test_library_images_are_served_as_png(self):
+        response = self.client.get(reverse('blog:image-png', args=[self.image.pk]))
+        self.assertEqual(response['Content-Type'], 'image/png')
+        with PILImage.open(BytesIO(response.content)) as png:
+            self.assertEqual((png.format, png.size), ('PNG', (300, 200)))
+        self.assertEqual(self.client.get(reverse('blog:image-png', args=[999])).status_code, 404)
+
+    def test_drafts_stay_hidden_and_cross_posts_stay_normal(self):
+        draft = self.post(status=Post.Status.DRAFT, published_at=None)
+        self.assertEqual(self.client.get(draft.get_absolute_url(), **self.EMBEDLY).status_code, 404)
+        draft.delete()
+        cross = self.post(canonical_url='https://medium.com/@someone/buckets-123')
+        self.assertContains(self.client.get(cross.get_absolute_url(), **self.EMBEDLY), 'class="highlight"')
+

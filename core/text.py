@@ -1,8 +1,11 @@
 import math
+import re
 from html import unescape
+from xml.etree import ElementTree as etree
 
 import markdown
 from django.conf import settings
+from django.urls import reverse
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 
@@ -44,6 +47,40 @@ class ImageExtension(Extension):
         md.treeprocessors.register(ImageAttributes(md, self.eager_first), 'image_attributes', 5)
 
 
+def _table_as_list(table):
+    """A table as a bulleted list, one item per row, for platforms without tables."""
+    (_, *headers), *rows = [[''.join(cell.itertext()).strip() for cell in row] for row in table.iter('tr')]
+    items = etree.Element('ul')
+    for first, *cells in rows:
+        item = etree.SubElement(items, 'li')
+        etree.SubElement(item, 'strong').text = first
+        item[0].tail = ': ' + '. '.join(f'{header}: {cell}' for header, cell in zip(headers, cells)) + '.'
+    return items
+
+
+class ImportCleanup(Treeprocessor):
+    """Rewrites what Medium's importer drops: tables become lists, library WebP images point at their PNG version."""
+
+    def run(self, root):
+        for parent in list(root.iter()):
+            for position, child in enumerate(list(parent)):
+                if child.tag == 'table':
+                    parent.remove(child)
+                    parent.insert(position, _table_as_list(child))
+        from .models import Image  # the models import this module
+        images = list(root.iter('img'))
+        names = {img.get('src', '').removeprefix(settings.MEDIA_URL) for img in images}
+        library = {image.file.name: image.pk for image in Image.objects.filter(file__in=names, file__endswith='.webp')}
+        for img in images:
+            if pk := library.get(img.get('src', '').removeprefix(settings.MEDIA_URL)):
+                img.set('src', reverse('blog:image-png', args=[pk]))
+
+
+class ImportExtension(Extension):
+    def extendMarkdown(self, md):
+        md.treeprocessors.register(ImportCleanup(md), 'import_cleanup', 5)
+
+
 BASE_EXTENSIONS = ['fenced_code', 'codehilite', 'tables', 'sane_lists', 'smarty']
 EXTENSIONS = BASE_EXTENSIONS + [ImageExtension()]
 ARTICLE_EXTENSIONS = BASE_EXTENSIONS + [ImageExtension(eager_first=True), 'toc']
@@ -57,6 +94,13 @@ def render_markdown(text):
     if not text:
         return ''
     return markdown.markdown(text, extensions=EXTENSIONS, extension_configs=CONFIG, output_format='html')
+
+
+def render_for_import(text):
+    """HTML that survives Medium's importer: code without highlighting tags, no tables, PNG instead of WebP."""
+    extensions = ['fenced_code', 'tables', 'sane_lists', 'smarty', ImportExtension()]
+    html = markdown.markdown(text, extensions=extensions, output_format='html')
+    return re.sub(r'<code class="language-[^"]*">', '<code>', html)
 
 
 def render_article(text):

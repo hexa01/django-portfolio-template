@@ -1,0 +1,20 @@
+<!doctype html>
+{# What Medium's importer receives instead of the normal page: see blog.views.detail. #}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ post.title }}</title>
+<meta property="og:title" content="{{ post.title }}">
+<meta property="og:description" content="{{ post.excerpt }}">
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ post.get_absolute_url }}">
+</head>
+<body>
+<main>
+<article>
+<h1>{{ post.title }}</h1>
+{% if post.cover %}<p><img alt="{{ post.cover_alt }}" src="{{ post.cover.url }}"></p>{% endif %}
+{{ body|safe }}
+</article>
+</main>
+</body>
+</html>

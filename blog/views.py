@@ -1,11 +1,19 @@
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.views.decorators.cache import cache_control
+from django.views.decorators.http import require_GET
+from django.views.decorators.vary import vary_on_headers
 
 from core import og, seo
-from core.models import PageText, SiteProfile
+from core.media import to_png
+from core.models import Image, PageText, SiteProfile
+from core.text import render_for_import
 
 from .models import Category, Post, Tag
+
+IMPORTER_AGENT = 'Embedly'
 
 PER_PAGE = 10
 
@@ -45,12 +53,25 @@ def index(request):
     })
 
 
+@require_GET
+@cache_control(public=True, max_age=2592000)
+def image_png(request, pk):
+    """A library image as PNG: Medium's importer drops WebP images."""
+    image = get_object_or_404(Image, pk=pk, file__endswith='.webp')
+    return HttpResponse(to_png(image.file), content_type='image/png')
+
+
+@vary_on_headers('User-Agent')
 def detail(request, slug):
     # staff can open drafts and scheduled posts to review them before publishing
     visible = Post.objects.all() if request.user.is_staff else Post.objects.published()
     post = get_object_or_404(visible.select_related('category'), slug=slug)
     published = Post.objects.published()
     preview = post not in published
+    # Medium's importer fetches the page as Embedly and drops highlighted code, WebP images and tables.
+    # Cross-posts already live elsewhere, and importing would follow their canonical link.
+    if not preview and not post.canonical_url and IMPORTER_AGENT in request.headers.get('User-Agent', ''):
+        return render(request, 'blog/import.html', {'post': post, 'body': render_for_import(post.body)})
     if post.cover:
         image = request.build_absolute_uri(post.cover.url)
     else:

@@ -55,6 +55,11 @@ def to_webp(upload, max_side):
     return ContentFile(buffer.getvalue()), image.size
 
 
+def to_png(file):
+    """PNG bytes for a stored image, for places that don't accept WebP."""
+    return _save(_open(file), 'PNG').read()
+
+
 def _open(upload):
     return ImageOps.exif_transpose(Image.open(upload))
 
