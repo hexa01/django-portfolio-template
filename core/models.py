@@ -1,5 +1,7 @@
+import calendar
 import secrets
 
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
@@ -18,11 +20,43 @@ PHOTO_SIZE = (640, 800)  # portrait 4:5, shown at up to ~430px wide
 LIBRARY_SIDE = 1600      # library images fit in 1600 × 1600: sharp in the 688px article column on 2x screens
 
 
-def year_range(start, end):
-    """"2021 - 2025", "2024 - present", or just "2024" when it started and ended the same year."""
+MONTHS = [(number, calendar.month_name[number]) for number in range(1, 13)]
+
+
+def year_range(start, end, start_month=None, end_month=None):
+    """"2021 - 2025", "Apr 2026 - present", "Jun 2025 - Mar 2026", or one date when both ends are the same."""
+    def when(year, month):
+        return f'{calendar.month_abbr[month]} {year}' if month else str(year)
+
     if end is None:
-        return f'{start} - present'
-    return str(start) if end == start else f'{start} - {end}'
+        return f'{when(start, start_month)} - present'
+    first, last = when(start, start_month), when(end, end_month)
+    return first if first == last else f'{first} - {last}'
+
+
+class Period(models.Model):
+    """Years, with optional months, for resume entries. Without months, periods show years only."""
+
+    start_year = models.PositiveSmallIntegerField()
+    start_month = models.PositiveSmallIntegerField(choices=MONTHS, null=True, blank=True)
+    end_year = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Leave empty for "present".')
+    end_month = models.PositiveSmallIntegerField(choices=MONTHS, null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+    def clean(self):
+        super().clean()
+        if self.end_month and self.end_year is None:
+            raise ValidationError({'end_month': 'Set an end year too, or leave both empty for "present".'})
+        if self.end_year is not None and self.start_year:
+            starts, ends = (self.start_year, self.start_month or 1), (self.end_year, self.end_month or 12)
+            if ends < starts:
+                raise ValidationError({'end_year': 'The end is before the start.'})
+
+    @property
+    def period(self):
+        return year_range(self.start_year, self.end_year, self.start_month, self.end_month)
 
 
 class SiteProfile(models.Model):
@@ -201,47 +235,35 @@ class PageText(models.Model):
         }
 
 
-class Experience(models.Model):
+class Experience(Period):
     role = models.CharField(max_length=100)
     organization = models.CharField(max_length=100)
-    start_year = models.PositiveSmallIntegerField()
-    end_year = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Leave empty for "present".')
     points = models.TextField(blank=True, help_text='What you owned and achieved, one per line.')
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        ordering = ['order', '-start_year']
+        ordering = ['order', '-start_year', '-start_month']
 
     def __str__(self):
         return f'{self.role}, {self.organization}'
-
-    @property
-    def period(self):
-        return year_range(self.start_year, self.end_year)
 
     @property
     def point_list(self):
         return [line.strip() for line in self.points.splitlines() if line.strip()]
 
 
-class Education(models.Model):
+class Education(Period):
     title = models.CharField(max_length=150, help_text='e.g. "BSc Computer Science"')
     organization = models.CharField(max_length=150)
     details = models.CharField(max_length=200, blank=True, help_text='Optional line below, e.g. "First class honours".')
-    start_year = models.PositiveSmallIntegerField()
-    end_year = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Leave empty for "present".')
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        ordering = ['order', '-start_year']
+        ordering = ['order', '-start_year', '-start_month']
         verbose_name_plural = 'education'
 
     def __str__(self):
         return self.title
-
-    @property
-    def period(self):
-        return year_range(self.start_year, self.end_year)
 
 
 class Certification(models.Model):

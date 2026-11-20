@@ -341,6 +341,28 @@ class AboutAndResumeTests(TestCase):
         self.assertContains(response, '<li>Go</li>', html=True)
         self.assertNotContains(response, 'id="certifications"')  # hidden while empty
 
+    def test_months_are_optional_in_periods(self):
+        from .models import year_range
+        self.assertEqual(year_range(2026, None, 4), 'Apr 2026 - present')
+        self.assertEqual(year_range(2025, 2026, 6, 3), 'Jun 2025 - Mar 2026')
+        self.assertEqual(year_range(2025, 2025, 3, 5), 'Mar 2025 - May 2025')
+        self.assertEqual(year_range(2021, 2025), '2021 - 2025')  # entries without months look as before
+        self.assertEqual(year_range(2025, 2025, 3, 3), 'Mar 2025')
+        Experience.objects.create(role='Developer', organization='Shop Co', start_year=2025, start_month=6,
+                                  end_year=2026, end_month=3)
+        self.assertContains(self.client.get(reverse('core:resume')), 'Jun 2025 - Mar 2026')
+
+    def test_period_must_not_end_before_it_starts(self):
+        for fields, field in [({'end_year': 2024}, 'end_year'),
+                              ({'start_month': 6, 'end_year': 2025, 'end_month': 3}, 'end_year'),
+                              ({'end_month': 3}, 'end_month')]:
+            job = Experience(role='Developer', organization='Shop Co', start_year=2025, **fields)
+            with self.assertRaises(ValidationError) as caught:
+                job.full_clean()
+            self.assertIn(field, caught.exception.message_dict)
+        Experience(role='Developer', organization='Shop Co', start_year=2025, start_month=3,
+                   end_year=2025, end_month=3).full_clean()  # one month is fine
+
     def test_about_shows_the_current_job_and_no_photo_placeholder(self):
         Experience.objects.create(role='Old role', organization='Past Co', start_year=2020, end_year=2022)
         Experience.objects.create(role='AI Engineer', organization='Now Co', start_year=2026)

@@ -95,12 +95,14 @@ class ExperienceAdmin(admin.ModelAdmin):
     list_display = ['role', 'organization', 'period', 'order']
     list_editable = ['order']
     search_fields = ['role', 'organization']
+    fields = ['role', 'organization', ('start_month', 'start_year'), ('end_month', 'end_year'), 'points', 'order']
 
 
 @admin.register(Education)
 class EducationAdmin(admin.ModelAdmin):
     list_display = ['title', 'organization', 'period', 'order']
     list_editable = ['order']
+    fields = ['title', 'organization', 'details', ('start_month', 'start_year'), ('end_month', 'end_year'), 'order']
 
 
 @admin.register(Certification)
