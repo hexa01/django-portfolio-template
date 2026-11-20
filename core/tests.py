@@ -379,6 +379,10 @@ class AboutAndResumeTests(TestCase):
         self.assertEqual(send('post', 'education/', {'title': 'BCA', 'organization': 'A University',
                                                      'start_year': 2021, 'end_year': 2025, 'order': 0})[0], 201)
         self.assertEqual(self.client.delete(f'/api/agent/experiences/{job["pk"]}/', **auth).status_code, 405)
+        status, group = send('post', 'skills/', {'name': 'Backend', 'items': 'Django, FastAPI', 'order': 1})
+        self.assertEqual(status, 201)
+        self.assertEqual(send('patch', f'skills/{group["pk"]}/', {'items': 'Django, FastAPI, Redis'})[0], 200)
+        self.assertContains(self.client.get(reverse('core:resume')), '<li>Redis</li>', html=True)
 
     def test_period_must_not_end_before_it_starts(self):
         for fields, field in [({'end_year': 2024}, 'end_year'),

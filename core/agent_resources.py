@@ -4,7 +4,7 @@
 from agent_content import Resource, Upload, register
 
 from .media import MAX_UPLOAD_BYTES
-from .models import Education, Experience, Image, PageText, SiteProfile
+from .models import Education, Experience, Image, PageText, SiteProfile, SkillGroup
 
 IMAGES = Upload(accept=['image/'], max_bytes=MAX_UPLOAD_BYTES)
 
@@ -43,6 +43,17 @@ register(Resource(
                 + RESUME_RULES,
     fields=['title', 'organization', 'details', 'start_year', 'start_month', 'end_year', 'end_month', 'order'],
     list_fields=['id', 'title', 'organization', 'start_year', 'end_year', 'order'],
+    create=True,
+))
+
+register(Resource(
+    SkillGroup,
+    name='skills',
+    singular='skill_group',
+    description='Skill groups on the Resume page: a group name and its items, comma-separated. Only skills the owner '
+                'lists. order is required: lower numbers show first.',
+    fields=['name', 'items', 'order'],
+    list_fields=['id', 'name', 'items', 'order'],
     create=True,
 ))
 
