@@ -352,6 +352,34 @@ class AboutAndResumeTests(TestCase):
                                   end_year=2026, end_month=3)
         self.assertContains(self.client.get(reverse('core:resume')), 'Jun 2025 - Mar 2026')
 
+    @override_settings(AGENT_CONTENT_REQUIRE_HTTPS=False)
+    def test_agents_add_and_edit_resume_entries_with_the_same_checks(self):
+        import io
+        import json
+        from django.core.management import call_command
+        out = io.StringIO()
+        call_command('agent_content_key', '--user', 'bot', stdout=out)
+        auth = {'HTTP_AUTHORIZATION': 'Bearer ' + next(l for l in out.getvalue().splitlines() if l.startswith('ac_'))}
+
+        def send(method, path, data):
+            response = getattr(self.client, method)('/api/agent/' + path, json.dumps(data),
+                                                    content_type='application/json', **auth)
+            return response.status_code, response.json()
+
+        status, body = send('post', 'experiences/', {'role': 'Developer', 'organization': 'Shop Co', 'start_year': 2025})
+        self.assertEqual((status, list(body['fields'])), (400, ['order']))  # explained, so an agent can fix it
+        status, job = send('post', 'experiences/', {'role': 'Developer', 'organization': 'Shop Co', 'start_year': 2025,
+                                                    'start_month': 6, 'end_year': 2026, 'end_month': 3,
+                                                    'points': 'Built invoices\nAdded caching', 'order': 2})
+        self.assertEqual(status, 201)
+        self.assertContains(self.client.get(reverse('core:resume')), 'Jun 2025 - Mar 2026')
+        status, body = send('patch', f'experiences/{job["pk"]}/', {'end_year': 2024})
+        self.assertEqual(status, 400)
+        self.assertIn('end_year', body['fields'])  # the same period check as the admin
+        self.assertEqual(send('post', 'education/', {'title': 'BCA', 'organization': 'A University',
+                                                     'start_year': 2021, 'end_year': 2025, 'order': 0})[0], 201)
+        self.assertEqual(self.client.delete(f'/api/agent/experiences/{job["pk"]}/', **auth).status_code, 405)
+
     def test_period_must_not_end_before_it_starts(self):
         for fields, field in [({'end_year': 2024}, 'end_year'),
                               ({'start_month': 6, 'end_year': 2025, 'end_month': 3}, 'end_year'),

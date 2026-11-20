@@ -4,7 +4,7 @@
 from agent_content import Resource, Upload, register
 
 from .media import MAX_UPLOAD_BYTES
-from .models import Image, PageText, SiteProfile
+from .models import Education, Experience, Image, PageText, SiteProfile
 
 IMAGES = Upload(accept=['image/'], max_bytes=MAX_UPLOAD_BYTES)
 
@@ -22,6 +22,28 @@ register(Resource(
         'logo': IMAGES,
         'resume_pdf': Upload(accept=['application/pdf'], max_bytes=MAX_UPLOAD_BYTES),
     },
+))
+
+RESUME_RULES = ('Only real entries the owner provides; never invent employers, schools, dates or results. Months are '
+                'optional (1-12); without them the Resume page shows years only. Leave the end year empty for '
+                '"present". order is required: lower numbers show first.')
+
+register(Resource(
+    Experience,
+    description='Jobs on the Resume page: role, organization, period and points (one achievement per line, no '
+                'bullet characters). ' + RESUME_RULES,
+    fields=['role', 'organization', 'start_year', 'start_month', 'end_year', 'end_month', 'points', 'order'],
+    list_fields=['id', 'role', 'organization', 'start_year', 'end_year', 'order'],
+    create=True,
+))
+
+register(Resource(
+    Education,
+    description='Education on the Resume page: title, school, an optional details line (e.g. a grade) and period. '
+                + RESUME_RULES,
+    fields=['title', 'organization', 'details', 'start_year', 'start_month', 'end_year', 'end_month', 'order'],
+    list_fields=['id', 'title', 'organization', 'start_year', 'end_year', 'order'],
+    create=True,
 ))
 
 register(Resource(
