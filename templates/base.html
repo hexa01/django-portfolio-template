@@ -23,7 +23,10 @@
   {% block meta %}{% endblock %}
 
   <meta name="theme-color" content="{{ theme.dark.bg }}">
-  {% if profile.logo %}<link rel="icon" href="{{ profile.logo.url }}" type="image/png">{% else %}<link rel="icon" href="{% url 'core:favicon' %}" type="image/svg+xml">{% endif %}
+  {% if not profile.logo %}<link rel="icon" href="{% url 'core:favicon' %}" type="image/svg+xml">{% endif %}
+  <link rel="icon" href="{% url 'core:icon' 48 %}" sizes="48x48" type="image/png">
+  <link rel="icon" href="{% url 'core:icon' 96 %}" sizes="96x96" type="image/png">
+  <link rel="apple-touch-icon" href="{% url 'core:apple-touch-icon' %}">
   <link rel="preload" href="{% static 'fonts/ibm-plex-sans-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{% static 'fonts/ibm-plex-sans-latin-600-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{% static 'fonts/ibm-plex-sans-latin-500-normal.woff2' %}" as="font" type="font/woff2" crossorigin>

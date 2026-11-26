@@ -1,5 +1,5 @@
-"""Social preview cards (1200×630 PNG): the card LinkedIn, Slack or WhatsApp shows for a shared link.
-Drawn with Pillow in the active theme's dark colours and the site's own IBM Plex fonts."""
+"""Images drawn with Pillow in the active theme's dark colours and the site's own IBM Plex fonts: social preview
+cards (1200×630 PNG, the card LinkedIn, Slack or WhatsApp shows for a shared link) and PNG/ICO site icons."""
 
 import hashlib
 from functools import lru_cache
@@ -16,8 +16,38 @@ PAD = 80
 
 
 @lru_cache
-def _font(weight, size):
-    return ImageFont.truetype(finders.find(f'fonts/ibm-plex-sans-latin-{weight}-normal.woff2'), size)
+def _font(weight, size, family='sans'):
+    return ImageFont.truetype(finders.find(f'fonts/ibm-plex-{family}-latin-{weight}-normal.woff2'), size)
+
+
+def icon(size, initials, logo=None, rounded=True):
+    """A square site icon as an RGBA image: the uploaded logo scaled to size, or the initials on the accent colour
+    (the same design as /favicon.svg, drawn as pixels for places that don't read SVG, such as search results)."""
+    if logo:
+        with Image.open(logo) as source:
+            return source.convert('RGBA').resize((size, size), Image.LANCZOS)
+    colours = theme_colors()['dark']
+    scale = 4  # draw large, then shrink, for smooth edges
+    big = Image.new('RGBA', (size * scale, size * scale), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(big)
+    radius = round(size * scale * 7 / 32) if rounded else 0
+    draw.rounded_rectangle((0, 0, size * scale - 1, size * scale - 1), radius, fill=colours['accent'])
+    font = _font(500, round(size * scale * 0.42), 'mono')
+    draw.text((size * scale / 2, size * scale / 2), initials, font=font, fill=colours['bg'], anchor='mm')
+    return big.resize((size, size), Image.LANCZOS)
+
+
+def icon_png(size, initials, logo=None, rounded=True):
+    buffer = BytesIO()
+    icon(size, initials, logo, rounded).save(buffer, format='PNG', optimize=True)
+    return buffer.getvalue()
+
+
+def icon_ico(initials, logo=None):
+    """/favicon.ico with 16, 32 and 48 pixel sizes, for tools that look there first."""
+    buffer = BytesIO()
+    icon(48, initials, logo).save(buffer, format='ICO', sizes=[(16, 16), (32, 32), (48, 48)])
+    return buffer.getvalue()
 
 
 def _wrap(draw, text, font, width):

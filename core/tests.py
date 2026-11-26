@@ -267,6 +267,41 @@ class FaviconTests(TestCase):
         self.assertContains(response, 'fill="#0C100E"')
         self.assertContains(response, f'>{SiteProfile.load().initials}</text>')
 
+    @PLAIN_STATIC
+    def test_png_and_ico_icons_for_search_engines_and_phones(self):
+        from io import BytesIO
+        page = self.client.get(reverse('core:home'))
+        for size in (48, 96):
+            self.assertContains(page, f'href="{reverse("core:icon", args=[size])}" sizes="{size}x{size}"')
+            response = self.client.get(reverse('core:icon', args=[size]))
+            self.assertEqual(response['Content-Type'], 'image/png')
+            with Image.open(BytesIO(response.content)) as png:
+                self.assertEqual(png.size, (size, size))
+                self.assertEqual(png.getpixel((size // 2, 2))[:3], (0x8D, 0xBF, 0xA0))  # the accent colour
+        self.assertEqual(self.client.get(reverse('core:icon', args=[50])).status_code, 404)
+        with Image.open(BytesIO(self.client.get(reverse('core:apple-touch-icon')).content)) as apple:
+            self.assertEqual(apple.size, (180, 180))
+            self.assertEqual(apple.getpixel((0, 0))[3], 255)  # square corners: phones round them
+        ico = self.client.get('/favicon.ico')
+        self.assertEqual(ico['Content-Type'], 'image/x-icon')
+        with Image.open(BytesIO(ico.content)) as favicon:
+            self.assertEqual(favicon.format, 'ICO')
+
+    @PLAIN_STATIC
+    def test_icons_use_the_uploaded_logo(self):
+        from io import BytesIO
+        media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media, ignore_errors=True)
+        with override_settings(MEDIA_ROOT=media):
+            profile = SiteProfile.load()
+            buffer = BytesIO()
+            Image.new('RGB', (300, 300), (200, 40, 40)).save(buffer, format='PNG')
+            profile.logo = SimpleUploadedFile('logo.png', buffer.getvalue())
+            profile.save()
+            with Image.open(BytesIO(self.client.get(reverse('core:icon', args=[48])).content)) as png:
+                self.assertEqual(png.getpixel((24, 24))[:3], (200, 40, 40))
+            self.assertNotContains(self.client.get(reverse('core:home')), 'favicon.svg')
+
 
 def contrast(a, b):
     def luminance(hex_value):

@@ -1,6 +1,6 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import DatabaseError, connection
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import cache_control, never_cache
 from django.views.decorators.http import require_GET, require_POST
@@ -51,6 +51,35 @@ def favicon(request):
         'ink': theme_colors()['dark']['bg'],
     }
     return render(request, 'favicon.svg', context, content_type='image/svg+xml')
+
+
+ICON_SIZES = {48, 96, 192}  # 48 and multiples: what search engines ask for
+
+
+@require_GET
+@cache_control(max_age=3600)
+def icon(request, size):
+    """The site icon as a PNG: the uploaded logo, or the initials on the accent colour."""
+    if size not in ICON_SIZES:
+        raise Http404
+    profile = SiteProfile.load()
+    return HttpResponse(og.icon_png(size, profile.initials, profile.logo or None), content_type='image/png')
+
+
+@require_GET
+@cache_control(max_age=3600)
+def apple_touch_icon(request):
+    """180×180 with square corners: iPhones and iPads round the corners themselves."""
+    profile = SiteProfile.load()
+    return HttpResponse(og.icon_png(180, profile.initials, profile.logo or None, rounded=False),
+                        content_type='image/png')
+
+
+@require_GET
+@cache_control(max_age=3600)
+def favicon_ico(request):
+    profile = SiteProfile.load()
+    return HttpResponse(og.icon_ico(profile.initials, profile.logo or None), content_type='image/x-icon')
 
 
 class AboutView(TemplateView):
